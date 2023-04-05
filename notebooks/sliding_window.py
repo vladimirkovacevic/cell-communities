@@ -1,4 +1,3 @@
-
 import logging
 import os
 
@@ -25,9 +24,25 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         self.method_key = 'sliding_window'
        
+    def run(self):
+        if self.tfile==None:
+            self.calc_feature_matrix()
+            self.calculate_spatial_cell_type_metrics()
+
+            var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
+            self.tissue.raw = self.tissue
+            self.tissue = self.tissue[:, var_use]
+        else:
+            if self.tfile.endswith('.h5ad'):
+                self.tissue = sc.read(self.tfile)
+            else:
+                raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
+        if f'tissue_{self.method_key}' not in self.adata.obs.keys():
+            self.cluster()
+
 
     def calc_feature_matrix(self):
-        # bin size needs to be a multiple of sliding step
+        # window size needs to be a multiple of sliding step
         self.sliding_step = (self.win_size/int((self.win_size/self.sliding_step))) if self.sliding_step!=None else self.win_size
         bin_slide_ratio = int(self.win_size/self.sliding_step)
 
@@ -105,18 +120,6 @@ class SlidingWindow(CommunityClusteringAlgo):
             # # num_object/image.size
             # # max value is based on neighbors size (if 4 then 1/4, if 8, 1/8), min value is 0 if there are no non-zero elements
             self.tissue.var['scatteredness'].loc[cell_t] = num_objects/tissue_window.size *4
-
-    def run(self):
-        if self.tissue==None:
-            self.calc_feature_matrix()
-        
-            self.calculate_spatial_cell_type_metrics()
-
-            var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
-            self.tissue.raw = self.tissue
-            self.tissue = self.tissue[:, var_use]
-        if f'tissue_{self.method_key}' not in self.adata.obs.keys():
-            self.cluster()
 
     def cluster(self):
 

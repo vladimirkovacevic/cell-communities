@@ -12,8 +12,8 @@ if __name__ == '__main__':
     sc.settings.verbosity = 3      
     sc.settings.set_figure_params(dpi=300, facecolor='white')
     parser = ap.ArgumentParser(description='A script that performs cell communities clusterization on single and multiple slices of ST data.')
-    parser.add_argument('-f', '--file', help='File that contain data to be clustered', type=str, required=True)
-    parser.add_argument('-t', '--tissue', help='Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix', type=str, required=False, default=None)
+    parser.add_argument('-f', '--file', help='File path to file that contain data to be analyzed/clustered', type=str, required=True)
+    parser.add_argument('-t', '--tfile', help='File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix', type=str, required=False, default=None)
     parser.add_argument('-a', '--annotation', help='Annotation label for cell types', type=str, required=True)
     parser.add_argument('-m', '--methods', help='Comma separated list of methods to perform. Available: sliding_window', type=str, required=True, default='sliding_window')
     parser.add_argument('-o', '--out_path', help='Absolute path to store outputs', type=str, required=True)
