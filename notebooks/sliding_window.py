@@ -47,8 +47,10 @@ class SlidingWindow(CommunityClusteringAlgo):
         bin_slide_ratio = int(self.win_size/self.sliding_step)
 
         # create centroids for each sliding step of windows
-        self.adata.obs['Centroid_X'] = ((self.adata.obsm['spatial'][:,0])/self.sliding_step).astype(int)
-        self.adata.obs['Centroid_Y'] = ((self.adata.obsm['spatial'][:,1])/self.sliding_step).astype(int)
+        # .obs data is assigned as pd.Series since sometimes the new column added to .obs Dataframe can have 'nan' values
+        # if the index of data doesn't match the index of .obs
+        self.adata.obs['Centroid_X'] = pd.Series(((self.adata.obsm['spatial'][:,0])/self.sliding_step).astype(int), index=self.adata.obs_names)
+        self.adata.obs['Centroid_Y'] = pd.Series(((self.adata.obsm['spatial'][:,1])/self.sliding_step).astype(int), index=self.adata.obs_names)
         # need to understand borders and padding
         # subwindows belonging to borders will not have a complete cell count
         x_max = self.adata.obs['Centroid_X'].max()
@@ -56,8 +58,8 @@ class SlidingWindow(CommunityClusteringAlgo):
 
 
         self.adata.obs['x_y'] = self.adata.obs['Centroid_X'].astype(str) +'_'+self.adata.obs['Centroid_Y'].astype(str)
-        tmp = self.adata.obs[['x_y', self.annotation]]
         
+        tmp = self.adata.obs[['x_y', self.annotation]]
         ret = {}
         # calculate features for each subwindow
         for sw_ind, sw_data in tmp.groupby('x_y'):
@@ -88,10 +90,11 @@ class SlidingWindow(CommunityClusteringAlgo):
             # scale the feature vector by the total numer of cells in it
             norm_factor = self.total_cell_norm/sum(feature_matrix[subwindow].values())
             for k in feature_matrix[subwindow]:
-                feature_matrix[subwindow][k] = int(feature_matrix[subwindow][k] * norm_factor)
+                feature_matrix[subwindow][k] = np.float32(feature_matrix[subwindow][k] * norm_factor)
                 
         feature_matrix = pd.DataFrame(feature_matrix).T
-        self.tissue = AnnData(feature_matrix, dtype=np.int64)
+        # feature_matrix is placd in AnnData object with specified spatial cooridnated of the sliding windows
+        self.tissue = AnnData(feature_matrix.astype(np.float32), dtype=np.float32)
         self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1]] for x in feature_matrix.index]).astype(int)
 
     def calculate_spatial_cell_type_metrics(self):
@@ -119,6 +122,8 @@ class SlidingWindow(CommunityClusteringAlgo):
             # # thus we multiply it with non-zero percentage (num non-zero / total num) creating just this formula
             # # num_object/image.size
             # # max value is based on neighbors size (if 4 then 1/4, if 8, 1/8), min value is 0 if there are no non-zero elements
+            # [NOTE] add neighbourhood size for scatteredness calculation to params
+            # [NOTE] try to find a heuristic to control the downsampling rate based on the proportion of cell number to area pixel number
             self.tissue.var['scatteredness'].loc[cell_t] = num_objects/tissue_window.size *4
 
     def cluster(self):

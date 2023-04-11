@@ -21,7 +21,7 @@ class CommunityClusteringAlgo(ABC):
         for key, value in params.items():
             setattr(self, key, value)
 
-        self.unique_cell_type = self.adata.obs[self.annotation].cat.categories
+        self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
         self.tissue = None
         # [NOTE] this should be included later
         # # define if each cell type needs a minimum amount of cells to be considered in cell mixtures and what is the minimum value
@@ -147,10 +147,10 @@ class CommunityClusteringAlgo(ABC):
                 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(20,8))
 
                 sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False)
-                ax[0].legend([f'{ind} ({ct_perc[ind]})' for ind in ct_ind], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
-
-                
+                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]})' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
+                ax[0].axis('off')
                 sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False)
+                ax[1].axis('off')
                 fig.subplots_adjust(wspace=0.35)
 
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
