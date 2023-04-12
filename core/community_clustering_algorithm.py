@@ -7,8 +7,6 @@ import pandas as pd
 import seaborn as sns
 from anndata import AnnData
 from matplotlib import pyplot as plt
-# import skimage.measure
-# import scipy.ndimage.measurements
 from itertools import cycle
 
 from abc import ABC, abstractmethod
@@ -60,6 +58,7 @@ class CommunityClusteringAlgo(ABC):
         # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)
         figure, ax = plt.subplots(nrows=1, ncols=1)
         sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=None, spot_size=self.spot_size, ax=ax, show=False)
+        ax.axis('off')
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 

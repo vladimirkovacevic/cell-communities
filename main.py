@@ -5,7 +5,8 @@ import re
 import sys
 
 import scanpy as sc
-from sliding_window import SlidingWindow
+from core import *
+
 
 if __name__ == '__main__':
 
