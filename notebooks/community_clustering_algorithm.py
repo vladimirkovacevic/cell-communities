@@ -53,21 +53,14 @@ class CommunityClusteringAlgo(ABC):
     def cluster(self):
         pass
 
-    def plot_clustering(
-        self,
-        sample_name="unknown",
-        color=['clusters'],
-        show=False,
-        palette=None
-        ):
+    def plot_clustering(self):
         # # plot initial clustering for each window
         # sc.pl.spatial(self.tissue, color='leiden', spot_size=1)
         # # plot clustering after majority voting for each subwindow
         # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)
-
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        sc.pl.spatial(self.adata, color=color, palette=palette, spot_size=self.spot_size, ax=ax, show=show)
-        figure.savefig(os.path.join(self.dir_path, sample_name), dpi=300, bbox_inches='tight')
+        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=None, spot_size=self.spot_size, ax=ax, show=False)
+        figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
     def calculate_spatial_cell_type_metrics(self):

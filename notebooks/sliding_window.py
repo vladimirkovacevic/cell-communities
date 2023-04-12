@@ -39,6 +39,12 @@ class SlidingWindow(CommunityClusteringAlgo):
                 raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
         if f'tissue_{self.method_key}' not in self.adata.obs.keys():
             self.cluster()
+        
+        self.plot_clustering()
+        self.calculate_cell_mixture_stats()
+        # self.plot_stats()
+        self.save_results()
+
 
 
     def calc_feature_matrix(self):
@@ -150,7 +156,7 @@ class SlidingWindow(CommunityClusteringAlgo):
             # max vote
             # max vote should be saved in a new obs column so that it does not have diagonal effect on
             # other labels during refinment
-            self.tissue.obs['leiden_max_vote'][f'{x_curr}_{y_curr}'] = max(subwindow_labels, key=subwindow_labels.get)
+            self.tissue.obs.loc[f'{x_curr}_{y_curr}', 'leiden_max_vote'] = max(subwindow_labels, key=subwindow_labels.get)
 
         self.adata.obs[f'tissue_{self.method_key}'] = list(self.tissue.obs.loc[self.adata.obs['x_y'], 'leiden_max_vote'])
 
@@ -171,4 +177,5 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         logging.info(f'Saved clustering result tissue_{self.filename}.h5ad.')
 
-        self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))
+        if 'cell mixtures' in self.tissue.uns.keys():
+            self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))

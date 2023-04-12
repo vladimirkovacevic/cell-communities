@@ -72,7 +72,4 @@ if __name__ == '__main__':
     for method in all_methods:
         algo = all_methods[method](adata, **vars(args))
         algo.run()
-        algo.plot_clustering(color=[f'tissue_{algo.method_key}'], sample_name=f'clusters_cellspots_{algo.params_suffix}.png')
-        algo.calculate_cell_mixture_stats()
-        algo.plot_stats()
-        algo.save_results()
+
