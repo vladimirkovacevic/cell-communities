@@ -2,14 +2,14 @@ import argparse as ap
 import anndata as ad
 import logging
 import os
-import re
-import sys
+# import re
+# import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from core import *
 import scanpy as sc
-from sliding_window import SlidingWindow
 
 def community_calling(adata, tissue, win_size, sliding_step, method_key):
     bin_slide_ratio = int(win_size/sliding_step)

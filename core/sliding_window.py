@@ -10,7 +10,8 @@ from matplotlib import pyplot as plt
 import skimage.measure
 import scipy.ndimage.measurements
 
-from community_clustering_algorithm import CommunityClusteringAlgo
+from core import CommunityClusteringAlgo
+from .utils import timeit
 
 class SlidingWindow(CommunityClusteringAlgo):
     def __init__(self, adata, input_file_path, **params):
