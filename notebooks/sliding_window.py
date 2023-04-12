@@ -13,8 +13,8 @@ import scipy.ndimage.measurements
 from community_clustering_algorithm import CommunityClusteringAlgo
 
 class SlidingWindow(CommunityClusteringAlgo):
-    def __init__(self, adata, **params):
-        super().__init__(adata, **params)
+    def __init__(self, adata, input_file_path, **params):
+        super().__init__(adata, input_file_path,  **params)
         self.params_suffix = f"_sldwin_r{self.resolution}_ws{self.win_size}_ss{self.sliding_step}_entt{self.entropy_thres}_scatt{self.scatter_thres}_dwnsr{self.downsample_rate}"
         self.filename = self.adata.uns['sample_name'] + self.params_suffix
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
@@ -37,9 +37,13 @@ class SlidingWindow(CommunityClusteringAlgo):
                 self.tissue = sc.read(self.tfile)
             else:
                 raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
-        if f'tissue_{self.method_key}' not in self.adata.obs.keys():
-            self.cluster()
+        # if f'tissue_{self.method_key}' not in self.adata.obs.keys():
+        #     self.cluster()
 
+        # self.plot_clustering(color=[f'tissue_{self.method_key}'], sample_name=f'clusters_cellspots_{self.params_suffix}.png')
+        # # self.calculate_cell_mixture_stats()
+        # # self.plot_stats()
+        # self.save_results()
 
     def calc_feature_matrix(self):
         # window size needs to be a multiple of sliding step
@@ -95,7 +99,9 @@ class SlidingWindow(CommunityClusteringAlgo):
         feature_matrix = pd.DataFrame(feature_matrix).T
         # feature_matrix is placd in AnnData object with specified spatial cooridnated of the sliding windows
         self.tissue = AnnData(feature_matrix.astype(np.float32), dtype=np.float32)
-        self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1]] for x in feature_matrix.index]).astype(int)
+        # spatial coordinates are expanded with 3rd dimension with slice_id 
+        # this should enable calculation of multislice cell communities
+        self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1], self.adata.uns['slice_id']] for x in feature_matrix.index]).astype(int)
 
     def calculate_spatial_cell_type_metrics(self):
         # calculate cell type specific global metrics
@@ -137,7 +143,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         # max voting on cluster labels
         # init the new obs column
         self.tissue.obs['leiden_max_vote'] = list('x' for x in range(len(self.tissue.obs.index)))
-        for x_curr, y_curr in self.tissue.obsm['spatial']:
+        for x_curr, y_curr, _ in self.tissue.obsm['spatial']:
             # index of subwindow is in the top left corner of the whole window
             subwindow_labels = {}
             for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
@@ -150,7 +156,7 @@ class SlidingWindow(CommunityClusteringAlgo):
             # max vote
             # max vote should be saved in a new obs column so that it does not have diagonal effect on
             # other labels during refinment
-            self.tissue.obs['leiden_max_vote'][f'{x_curr}_{y_curr}'] = max(subwindow_labels, key=subwindow_labels.get)
+            self.tissue.obs.loc[f'{x_curr}_{y_curr}', 'leiden_max_vote'] = max(subwindow_labels, key=subwindow_labels.get)
 
         self.adata.obs[f'tissue_{self.method_key}'] = list(self.tissue.obs.loc[self.adata.obs['x_y'], 'leiden_max_vote'])
 
@@ -171,4 +177,5 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         logging.info(f'Saved clustering result tissue_{self.filename}.h5ad.')
 
-        self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))
+        if 'cell mixtures' in self.tissue.uns.keys():
+            self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))

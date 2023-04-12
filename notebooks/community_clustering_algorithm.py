@@ -14,10 +14,10 @@ from itertools import cycle
 from abc import ABC, abstractmethod
 
 class CommunityClusteringAlgo(ABC):
-    def __init__(self, adata, **params):
+    def __init__(self, adata, input_file_path, **params):
         self.adata = adata
         self.adata.uns['algo_params'] = params
-        self.adata.uns['sample_name'] = os.path.basename(self.adata.uns['algo_params']['file'].rsplit(".", 1)[0])
+        self.adata.uns['sample_name'] = os.path.basename(input_file_path.rsplit(".", 1)[0])
         for key, value in params.items():
             setattr(self, key, value)
 
@@ -49,6 +49,9 @@ class CommunityClusteringAlgo(ABC):
 
     def calc_feature_matrix(self):
         pass
+
+    def get_tissue(self):
+        return self.tissue
 
     def cluster(self):
         pass
