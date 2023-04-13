@@ -44,7 +44,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         
         self.plot_clustering()
         self.calculate_cell_mixture_stats()
-        # self.plot_stats()
+        self.plot_stats()
         self.save_results()
 
 
