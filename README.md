@@ -3,12 +3,15 @@
 This Python script performs cell communities clusterization on single and multiple slices of spatial transcriptomics (ST) data. It provides an implementation of the Sliding Window algorithm to analyze the cell community in ST data.
 ## Prerequisites
 - Python 3.7 or higher
-- scanpy 1.7.1 or higher
-- numpy 1.20.0 or higher
-- pandas 1.2.1 or higher
-- matplotlib 3.3.4 or higher
-- seaborn 0.11.1 or higher
-- opencv-python 4.5.1.48 or higher
+- leidenalg
+- scikit-image
+- matplotlib
+- numpy
+- pandas
+- scanpy
+- scikit-learn
+- scipy
+- seaborn
 ## Installation
 
 You can install the required Python packages by running:
@@ -30,8 +33,8 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 ### Required arguments: 
 - `-f, --file`: File path to file that contains data to be analyzed/clustered. 
 - `-a, --annotation`: Annotation label for cell types. 
-- `-m, --methods`: Comma-separated list of methods to perform. Currently, only `sliding_window` is available.
 ### Optional arguments: 
+- `-m, --methods`: Comma-separated list of methods to perform. Currently, only `sliding_window` is available.
 - `-t, --tfile`: File path to Anndata object with calculated cell mixtures for data windows, output of `calc_feature_matrix`. 
 - `-o, --out_path`: Absolute path to store outputs. 
 - `-r, --resolution`: Resolution of the clustering algorithm. Default is `0.2`. 

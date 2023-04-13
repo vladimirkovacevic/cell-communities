@@ -1,0 +1,9 @@
+leidenalg
+scikit-image
+matplotlib
+numpy
+pandas
+scanpy
+scikit-learn
+scipy
+seaborn
