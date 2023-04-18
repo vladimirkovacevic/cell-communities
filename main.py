@@ -2,41 +2,56 @@ import argparse as ap
 import anndata as ad
 import logging
 import os
-# import re
-# import sys
+
+import skimage.measure
+import scipy.ndimage.measurements
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
-from core import *
 import scanpy as sc
 
-def community_calling(adata, tissue, win_size, sliding_step, method_key):
-    bin_slide_ratio = int(win_size/sliding_step)
-    x_min = adata.obs['Centroid_X'].min()
-    y_min = adata.obs['Centroid_Y'].min()
-    # max voting on cluster labels
-    # init the new obs column
-    tissue.obs['leiden_max_vote'] = list('x' for x in range(len(tissue.obs.index)))
-    for x_curr, y_curr, _ in tissue.obsm['spatial']:
-        # index of subwindow is in the top left corner of the whole window
-        subwindow_labels = {}
-        for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
-            for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
-                # check if location exist (spatial area is not complete)
-                if (f'{x_curr - slide_x}_{y_curr - slide_y}') in tissue.obs.index:
-                    new_value = tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}', 'leiden']
-                    subwindow_labels[new_value] = subwindow_labels[new_value] + 1 if new_value in subwindow_labels.keys() else 1
+from core import *
+
+def entropy2D(image):
+    return skimage.measure.shannon_entropy(image)
+
+def scatteredness2D(image, kernel):
+    _, num_objects = scipy.ndimage.measurements.label(image, structure=kernel, output=None) # this assumes 4 neighbors connectivity
+    # # idea for scatteredness was to compute the number of connected components and divide it with number of existing non-zero elements
+    # # but this measure does not contain the information on percentage of non-zero elements in the matrix.
+    # # thus we multiply it with non-zero percentage (num non-zero / total num) creating just this formula
+    # # num_object/image.size
+    # # max value is based on neighbors size (if 4 then 1/4, if 8, 1/8), min value is 0 if there are no non-zero elements
+    # [NOTE] add neighbourhood size for scatteredness calculation to params
+    # [NOTE] try to find a heuristic to control the downsampling rate based on the proportion of cell number to area pixel number
+    scatteredness = num_objects/image.size * np.sum(kernel.ravel())
+    return scatteredness
+
+## CALCULATE_SPATIAL_METRICS
+# @params
+# 
+def calculate_spatial_metrics(adata, unique_cell_type, downsample_rate, annotation):
+    # calculate cell type specific global metrics
+    adata.obs['x_coor'] = (adata.obsm['spatial'][:,0])
+    adata.obs['y_coor'] = (algo.adata.obsm['spatial'][:,1])
+    cx_min = np.min(adata.obs['x_coor'])
+    cx_max = np.max(adata.obs['x_coor'])
+    cy_min = np.min(adata.obs['y_coor'])
+    cy_max = np.max(adata.obs['y_coor'])
+
+    scatt_kernel = np.array([[0,1,0], [1,1,1], [0,1,0]], dtype=np.int8)
+    entropy = pd.Series(index=algo.unique_cell_type, name='entropy', dtype=np.float64)
+    scatteredness = pd.Series(index=algo.unique_cell_type, name='scatteredness', dtype=np.float64)
+    cell_t_images = {}
+    for cell_t in unique_cell_type:
+        tissue_window = np.zeros(shape=(int(np.ceil((cx_max-cx_min+1)/downsample_rate)), int(np.ceil((cy_max-cy_min+1)/downsample_rate))), dtype=np.int8)
+        tissue_window[((adata.obs['x_coor'][adata.obs[annotation] == cell_t] - cx_min)/downsample_rate).astype(int), ((adata.obs['y_coor'][adata.obs[annotation] == cell_t] - cy_min)/downsample_rate).astype(int)] = 1
+        cell_t_images[cell_t] = tissue_window
         
-        # max vote
-        # max vote should be saved in a new obs column so that it does not have diagonal effect on
-        # other labels during refinment
-        tissue.obs.loc[f'{x_curr}_{y_curr}', 'leiden_max_vote'] = max(subwindow_labels, key=subwindow_labels.get)
-
-    adata.obs[f'tissue_{method_key}'] = list(tissue.obs.loc[adata.obs['x_y'], 'leiden_max_vote'])
-
-    logging.info(r"Sliding window cell mixture calculation done. Added results to adata.obs['sliding_window']")
-
+        entropy.loc[cell_t] = entropy2D(tissue_window)
+        scatteredness.loc[cell_t] = scatteredness2D(tissue_window, kernel=scatt_kernel)
+    return [entropy, scatteredness, cell_t_images]
 
 if __name__ == '__main__':
 
@@ -92,7 +107,7 @@ if __name__ == '__main__':
     
     # Process requested methods
     for method in all_methods:
-        adata_list = []
+        algo_list = []
         tissue_list = []
         # FOR
         for slice_id, file in enumerate(args.files.split(',')):
@@ -100,44 +115,56 @@ if __name__ == '__main__':
             if file.endswith('.h5ad'):
                 adata = sc.read(file)
                 adata.uns['slice_id'] = slice_id
-                adata_list.append(adata)
             # elif args.file.endswith('.gef'):
             #     data = st.io.read_gef(file_path=args.file, bin_type='cell_bins')
             #     adata = st.io.stereo_to_anndata(data)
             else:
                 raise AttributeError(f"File '{file}' extension is not .h5ad") # or .gef
-            # FEATURE EXTRACTION (SLIDING_WINDOW) & CELL TYPE FILTERING
-            algo = all_methods[method](adata, file, **vars(args))
+            # FEATURE EXTRACTION (SLIDING_WINDOW)
+            algo = all_methods[method](adata, slice_id, file, **vars(args))
             # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness
             algo.run()
-            # algo.plot_clustering(color=[f'tissue_{algo.method_key}'], sample_name=f'clusters_cellspots_{algo.params_suffix}.png')
-            # algo.calculate_cell_mixture_stats()
-            # algo.plot_stats()
-            # algo.save_results()
 
-            tissue_list.append(algo.get_tissue())
+            # CELL TYPE FILTERING
+            # [NOTE] This is not valid for multislice. A consensus on removing a cell type must
+            # be made for all slices before removing it from any slice.
+            # here I have tissue, I want to calculate entropy and scatteredness for each cell type in adata
+            # and based on this information remove certain cell types
+            algo.tissue.var['entropy'], algo.tissue.var['scatteredness'], algo.tissue.uns['cell_t_images'] = calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
+            # [NOTE] should have a flag here determining if plotting should be done or skipped
+            algo.save_metrics()
+            algo.plot_celltype_images()
+           
+            algo.cell_type_filtering()
+            
+            # add algo object for each slice to a list
+            algo_list.append(algo)
         
         # MERGE TISSUE ANNDATA
         # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
-        merged_tissue = ad.concat(tissue_list, axis=0, join='outer')
+        merged_tissue = ad.concat([a.get_tissue() for a in algo_list], axis=0, join='outer')
+
         # CLUSTERING (WINDOW_LABELS)
         sc.pp.neighbors(merged_tissue, use_rep='X')
         sc.tl.leiden(merged_tissue, resolution=args.resolution)
 
         for slice_id, _ in enumerate(args.files.split(',')):
             # extract clustering data from merged_tissue
-            tissue_list[slice_id].obs = tissue_list[slice_id].obs.copy()
-            tissue_list[slice_id].obs['leiden'] = pd.Series(merged_tissue.obs.loc[merged_tissue.obsm['spatial'][:,2]==slice_id, 'leiden'], index=tissue_list[slice_id].obs.index)
+            algo_list[slice_id].set_clustering_labels(merged_tissue.obs.loc[merged_tissue.obsm['spatial'][:,2]==slice_id, 'leiden'])
+           
             # COMMUNITY CALLING (MAJORITY VOTING)
-            community_calling(adata=adata_list[slice_id], tissue=tissue_list[slice_id], win_size=args.win_size, sliding_step=args.sliding_step, method_key=args.methods)
-            
+            algo_list[slice_id].community_calling()
+
+            # save anndata object for further use
+            algo_list[slice_id].save_tissue()
+
             # PLOT COMMUNITIES & STATISTICS
-            figure, ax = plt.subplots(nrows=1, ncols=1)
-            sc.pl.spatial(adata_list[slice_id], color=f'tissue_{args.methods}', palette=None, spot_size=args.spot_size, ax=ax, show=False)
-            ax.axis('off')
-            figure.savefig(os.path.join(algo.dir_path, f'clusters_cellspots_slice{slice_id}.png'), dpi=300, bbox_inches='tight')
-            plt.close()
+            algo_list[slice_id].plot_clustering()
+            algo_list[slice_id].calculate_cell_mixture_stats()
+            algo_list[slice_id].plot_stats()
+            algo_list[slice_id].save_mixture_stats()
+
+            # save final tissue with stats
+            algo_list[slice_id].save_tissue(suffix='_stats')
 
         print('END')
-        
-
