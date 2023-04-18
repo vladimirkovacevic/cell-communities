@@ -80,6 +80,7 @@ class CommunityClusteringAlgo(ABC):
 
         figure, ax = plt.subplots(nrows=1, ncols=1)
         sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], spot_size=self.spot_size, ax=ax, show=False)
+        ax.axis('off')
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -142,8 +143,8 @@ class CommunityClusteringAlgo(ABC):
         plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), dpi=400)
         plt.close()
 
-        min_cell_types = 1
-        min_perc = 20
+        min_cell_types = 3
+        min_perc = 15
         min_perc_to_show = 5
         min_cells_in_cluster = 500
 
@@ -168,7 +169,7 @@ class CommunityClusteringAlgo(ABC):
 
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
 
-                plt.close()
+                plt.close(fig)
 
     def save_metrics(self):
         # save metrics results in csv format

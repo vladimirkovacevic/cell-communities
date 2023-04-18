@@ -4,10 +4,9 @@ import logging
 import os
 
 import skimage.measure
-import scipy.ndimage.measurements
+import scipy.ndimage
 
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 import scanpy as sc
 
@@ -17,7 +16,7 @@ def entropy2D(image):
     return skimage.measure.shannon_entropy(image)
 
 def scatteredness2D(image, kernel):
-    _, num_objects = scipy.ndimage.measurements.label(image, structure=kernel, output=None) # this assumes 4 neighbors connectivity
+    _, num_objects = scipy.ndimage.label(image, structure=kernel, output=None) # this assumes 4 neighbors connectivity
     # # idea for scatteredness was to compute the number of connected components and divide it with number of existing non-zero elements
     # # but this measure does not contain the information on percentage of non-zero elements in the matrix.
     # # thus we multiply it with non-zero percentage (num non-zero / total num) creating just this formula
