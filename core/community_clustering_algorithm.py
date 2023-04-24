@@ -59,9 +59,7 @@ class CommunityClusteringAlgo(ABC):
         # to prevent warning about appending data to a view of obs
         self.tissue.obs = self.tissue.obs.copy()
         self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)
-           
-
-    
+   
     def cell_type_filtering(self):
         # extract binary image of cell positions for each cell type in the slice
         var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
@@ -184,5 +182,4 @@ class CommunityClusteringAlgo(ABC):
 
     def save_mixture_stats(self):
         # save cell mixture statistics
-        if 'cell mixtures' in self.tissue.uns.keys():
-            self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))
+        self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))
