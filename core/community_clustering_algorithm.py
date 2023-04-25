@@ -1,15 +1,13 @@
 import logging
 import os
+from itertools import cycle
+from abc import ABC, abstractmethod
 
 import scanpy as sc
-import numpy as np
 import pandas as pd
 import seaborn as sns
-from anndata import AnnData
 from matplotlib import pyplot as plt
-from itertools import cycle
 
-from abc import ABC, abstractmethod
 
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
@@ -102,8 +100,7 @@ class CommunityClusteringAlgo(ABC):
             stats_table[label]['total_counts'] = int(sum(cell_type_dict.values()))
 
         stats = pd.DataFrame(stats_table).T
-        # stats.index.name='clusters'
-        stats.columns.name="cell types"
+        stats.columns.name = "cell types"
 
         # add final row with total counts per cell types
         cell_type_counts = {ct:[int(sum(stats[ct].values))] for ct in self.tissue.var.index}
