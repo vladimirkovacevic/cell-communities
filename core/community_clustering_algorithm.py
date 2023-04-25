@@ -98,7 +98,8 @@ class CommunityClusteringAlgo(ABC):
             for cell in cluster_data[self.annotation]:
                 cell_type_dict[cell]+=1
             # remove excluded cell types
-            cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index}
+            cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index.sort_values()}
+
             stats_table[label] = {k:cell_type_dict[k] for k in cell_type_dict}
 
             stats_table[label]['total_counts'] = int(sum(cell_type_dict.values()))
