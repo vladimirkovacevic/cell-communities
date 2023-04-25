@@ -1,4 +1,3 @@
-import sys
 import logging
 
 from .community_clustering_algorithm import CommunityClusteringAlgo

@@ -12,10 +12,11 @@ from itertools import cycle
 from abc import ABC, abstractmethod
 
 class CommunityClusteringAlgo(ABC):
-    def __init__(self, adata, **params):
+    def __init__(self, adata, slice_id, input_file_path, **params):
         self.adata = adata
+        self.slice_id = slice_id
         self.adata.uns['algo_params'] = params
-        self.adata.uns['sample_name'] = os.path.basename(self.adata.uns['algo_params']['file'].rsplit(".", 1)[0])
+        self.adata.uns['sample_name'] = os.path.basename(input_file_path.rsplit(".", 1)[0])
         for key, value in params.items():
             setattr(self, key, value)
 
@@ -42,14 +43,30 @@ class CommunityClusteringAlgo(ABC):
         pass
 
     @abstractmethod
-    def save_results(self):
-        pass
-
     def calc_feature_matrix(self):
         pass
 
-    def cluster(self):
+    @abstractmethod
+    def community_calling(self):
         pass
+
+    def get_tissue(self):
+        return self.tissue
+    
+    def set_clustering_labels(self, labels):
+        # to prevent warning about appending data to a view of obs
+        self.tissue.obs = self.tissue.obs.copy()
+        self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)
+   
+    def cell_type_filtering(self):
+        # extract binary image of cell positions for each cell type in the slice
+        var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
+        self.tissue.raw = self.tissue
+        self.tissue = self.tissue[:, var_use]
+    
+    def plot_celltype_images(self):
+        for cell_t in self.unique_cell_type:
+            plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=250)
 
     def plot_clustering(self):
         # # plot initial clustering for each window
@@ -78,7 +95,8 @@ class CommunityClusteringAlgo(ABC):
             for cell in cluster_data[self.annotation]:
                 cell_type_dict[cell]+=1
             # remove excluded cell types
-            cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index}
+            cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index.sort_values()}
+
             stats_table[label] = {k:cell_type_dict[k] for k in cell_type_dict}
 
             stats_table[label]['total_counts'] = int(sum(cell_type_dict.values()))
@@ -101,7 +119,7 @@ class CommunityClusteringAlgo(ABC):
     def plot_stats(self):
         stats = self.tissue.uns['cell mixtures']
         sc.settings.set_figure_params(dpi=400, facecolor='white')
-        sns.set(font_scale=0.2)
+        sns.set(font_scale=0.5)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
         fig, axes = plt.subplots(ncols=ncols)
@@ -121,8 +139,8 @@ class CommunityClusteringAlgo(ABC):
         plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), dpi=400)
         plt.close()
 
-        min_cell_types = 2
-        min_perc = 20
+        min_cell_types = 3
+        min_perc = 15
         min_perc_to_show = 5
         min_cells_in_cluster = 500
 
@@ -136,15 +154,27 @@ class CommunityClusteringAlgo(ABC):
             if ct_perc[min_cell_types-1] > min_perc and stats.loc[cluster[0]]['total_counts']>min_cells_in_cluster:
                 ct_ind = [x for x in ct_perc.index[ct_perc>min_perc_to_show]]
                 
-                fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(20,8))
-
-                sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False)
-                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]})' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
-                ax[0].axis('off')
-                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False)
-                ax[1].axis('off')
+                fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
                 fig.subplots_adjust(wspace=0.35)
 
+                sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
+                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]})' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
+                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False, frameon=False,)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
 
                 plt.close()
+
+    def save_metrics(self):
+        # save metrics results in csv format
+        # print(self.tissue.var[['entropy', 'scatteredness']])
+        self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
+
+    def save_tissue(self, suffix=''):
+        # save anndata file
+        self.tissue.write_h5ad(os.path.join(self.dir_path, f'tissue_{self.filename}{suffix}.h5ad'), compression="gzip")
+
+        logging.info(f'Saved clustering result tissue_{self.filename}.h5ad.')
+
+    def save_mixture_stats(self):
+        # save cell mixture statistics
+        self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))
