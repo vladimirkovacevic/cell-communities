@@ -50,7 +50,7 @@ def calculate_spatial_metrics(adata, unique_cell_type, downsample_rate, annotati
         
         entropy.loc[cell_t] = entropy2D(tissue_window)
         scatteredness.loc[cell_t] = scatteredness2D(tissue_window, kernel=scatt_kernel)
-    return [entropy, scatteredness, cell_t_images]
+    return [entropy.values, scatteredness.values, cell_t_images]
 
 if __name__ == '__main__':
 
@@ -116,6 +116,10 @@ if __name__ == '__main__':
             # READ CELL TYPE ADATA
             if file.endswith('.h5ad'):
                 adata = sc.read(file)
+                # # change adata annotation to string
+                # adata.obs[args.annotation] = [str(x) for x in adata.obs[args.annotation]]
+                # # check if adata.obs[annotation] is of type Category, that is expected
+                # if adata.obs[args.annotation].dtype != 'category': adata.obs[args.annotation] = adata.obs[args.annotation].astype('category')
                 adata.uns['slice_id'] = slice_id
             # elif args.file.endswith('.gef'):
             #     data = st.io.read_gef(file_path=args.file, bin_type='cell_bins')

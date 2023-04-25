@@ -121,7 +121,7 @@ class CommunityClusteringAlgo(ABC):
     def plot_stats(self):
         stats = self.tissue.uns['cell mixtures']
         sc.settings.set_figure_params(dpi=400, facecolor='white')
-        sns.set(font_scale=0.2)
+        sns.set(font_scale=0.5)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
         fig, axes = plt.subplots(ncols=ncols)
@@ -157,17 +157,14 @@ class CommunityClusteringAlgo(ABC):
                 ct_ind = [x for x in ct_perc.index[ct_perc>min_perc_to_show]]
                 
                 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
-
-                sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False)
-                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]})' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
-                ax[0].axis('off')
-                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False)
-                ax[1].axis('off')
                 fig.subplots_adjust(wspace=0.35)
 
+                sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
+                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]})' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
+                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False, frameon=False,)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
 
-                plt.close(fig)
+                plt.close()
 
     def save_metrics(self):
         # save metrics results in csv format
