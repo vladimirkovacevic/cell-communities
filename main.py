@@ -74,7 +74,8 @@ if __name__ == '__main__':
     parser.add_argument('--entropy_thres', help='Threshold value for spatial cell type entropy for filtering out overdispersed cell types', type=float, required=False, default=1.0)
     parser.add_argument('--scatter_thres', help='Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types', type=float, required=False, default=1.0)
 
-    parser.add_argument('-w', '--win_size', help='Window size for anlyzing the cell community', type=int, required=False, default=150)
+
+    parser.add_argument('-w', '--win_size', help='Window size for anlyzing the cell community', type=int,required=False, default=150)
     parser.add_argument('--sliding_step', help='Slide step for sliding window method', type=int, required=False, default=50)
 
 

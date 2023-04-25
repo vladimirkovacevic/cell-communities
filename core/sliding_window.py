@@ -8,9 +8,8 @@ import pandas as pd
 from anndata import AnnData
 from matplotlib import pyplot as plt
 
-
-from core import CommunityClusteringAlgo
 from .utils import timeit
+from core import CommunityClusteringAlgo
 
 class SlidingWindow(CommunityClusteringAlgo):
     def __init__(self, adata, slice_id, input_file_path, **params):
