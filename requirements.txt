@@ -7,3 +7,4 @@ scanpy
 scikit-learn
 scipy
 seaborn
+anndata
