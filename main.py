@@ -29,6 +29,9 @@ if __name__ == '__main__':
     parser.add_argument('--scatter_thres', help='Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types', type=float, required=False, default=1.0)
     parser.add_argument('-w', '--win_size', help='Window size for anlyzing the cell community', type=int,required=False, default=150)
     parser.add_argument('--sliding_step', help='Slide step for sliding window method', type=int, required=False, default=50)
+    parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
+    parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
+
 
     args = parser.parse_args()
 
@@ -67,6 +70,9 @@ if __name__ == '__main__':
                 raise AttributeError(f"File '{file}' extension is not .h5ad") # or .gef
             # FEATURE EXTRACTION (SLIDING_WINDOW)
             algo = all_methods[method](adata, slice_id, file, **vars(args))
+            # plot original annotation
+            if args.plotting > 1:
+                algo.plot_annotation()
             # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness
             algo.run()
 
@@ -80,7 +86,8 @@ if __name__ == '__main__':
             # save a .csv file with metrics per cell type
             algo.save_metrics()
             # plot binary images of cell types spatial positions
-            if args.plotting > 1: algo.plot_celltype_images()
+            if args.plotting > 1:
+                algo.plot_celltype_images()
             # filter the cell types which are not localized using calculated metrics (entropy and scatteredness)
             algo.cell_type_filtering()
             

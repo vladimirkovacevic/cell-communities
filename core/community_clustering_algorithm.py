@@ -8,6 +8,8 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
+from .utils import timeit
+
 
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
@@ -55,25 +57,31 @@ class CommunityClusteringAlgo(ABC):
         # to prevent warning about appending data to a view of obs
         self.tissue.obs = self.tissue.obs.copy()
         self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)
+
+    def plot_annotation(self):
+        figure, ax = plt.subplots(nrows=1, ncols=1)
+        sc.pl.spatial(self.adata, color=[self.annotation], palette=None, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
+        figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
+        plt.close()
    
     def cell_type_filtering(self):
         # extract binary image of cell positions for each cell type in the slice
         var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
         self.tissue.raw = self.tissue
         self.tissue = self.tissue[:, var_use]
-    
+
     def plot_celltype_images(self):
         for cell_t in self.unique_cell_type:
             plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=250)
-
+    
+    @timeit
     def plot_clustering(self):
         # # plot initial clustering for each window
         # sc.pl.spatial(self.tissue, color='leiden', spot_size=1)
         # # plot clustering after majority voting for each subwindow
         # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=None, spot_size=self.spot_size, ax=ax, show=False)
-        ax.axis('off')
+        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=None, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -128,19 +136,17 @@ class CommunityClusteringAlgo(ABC):
         cmap_cycle = cycle(['Greens', 'Reds', 'Blues', 'Oranges', 'Purples'])
 
         for i, ax in enumerate(axes):
-            g = sns.heatmap(pd.DataFrame(stats.iloc[:, i]), vmin=0.0, vmax=50, linewidths=0, linecolor=None, annot=True, cbar=False, ax=ax, cmap=cmap_cycle.__next__(),fmt='4.0f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
+            g = sns.heatmap(pd.DataFrame(stats.iloc[:, i]), vmin=0.0, vmax=50, linewidths=0, linecolor=None, annot=True, cbar=False, ax=ax, \
+                            cmap=cmap_cycle.__next__(),fmt='4.0f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
             g.set_xticklabels(g.get_xticklabels(), rotation=70)
             g.xaxis.tick_top() # x axis on top
         # final column should have the sum of all cells per cluster
-        sns.heatmap(pd.DataFrame(stats.iloc[:, -1]), annot=True, linewidths=0, linecolor=None, cbar=False, cmap=None, ax=ax, fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
+        sns.heatmap(pd.DataFrame(stats.iloc[:, -1]), annot=True, linewidths=0, linecolor=None, cbar=False, cmap=None, ax=ax, \
+                    fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
         plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), dpi=400)
         plt.close()
 
-        min_cell_types = 3
-        min_perc = 15
-        min_perc_to_show = 5
-        min_cells_in_cluster = 500
-
+        # plot each cluster and its cells mixture
         sc.settings.set_figure_params(dpi=100, facecolor='white')
 
         new_stats = stats.copy()
@@ -148,8 +154,10 @@ class CommunityClusteringAlgo(ABC):
         new_stats = new_stats.drop(labels='total_cells', axis=0)
         for cluster in new_stats.iterrows():
             ct_perc = cluster[1].sort_values(ascending=False)
-            if ct_perc[min_cell_types-1] > min_perc and stats.loc[cluster[0]]['total_counts']>min_cells_in_cluster:
-                ct_ind = [x for x in ct_perc.index[ct_perc>min_perc_to_show]]
+            # only display clusters with more than min_cells_in_cluster cells
+            if stats.loc[cluster[0]]['total_counts'] > self.min_cluster_size:
+                # only cell types which have more than min_perc_to_show abundance will be shown
+                ct_ind = [x for x in ct_perc.index[ct_perc>self.min_perc_to_show]]
                 
                 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
                 fig.subplots_adjust(wspace=0.35)
