@@ -62,16 +62,17 @@ if __name__ == '__main__':
         
         for slice_id, file in enumerate(args.files.split(',')):
             algo_list = []
+
+            # READ CELL TYPE ADATA
+            if file.endswith('.h5ad'):
+                adata = sc.read(file)
+                adata.uns['slice_id'] = slice_id
+            else:
+                # TODO: Consider adding GEF support
+                raise AttributeError(f"File '{file}' extension is not .h5ad") # or .gef
+
             # FOR
             for win_size in win_size_list:
-                # READ CELL TYPE ADATA
-                if file.endswith('.h5ad'):
-                    adata = sc.read(file)
-                    adata.uns['slice_id'] = slice_id
-                else:
-                    # TODO: Consider adding GEF support
-                    raise AttributeError(f"File '{file}' extension is not .h5ad") # or .gef
-                
                 args.win_size = win_size
                 # FEATURE EXTRACTION (SLIDING_WINDOW)
                 algo = all_methods[method](adata, slice_id, file, **vars(args))
@@ -96,10 +97,13 @@ if __name__ == '__main__':
                 algo_list.append(algo)
             
             algo_dict[slice_id] = algo_list
-            
+        
+        algos = []
+        for algo_list in algo_dict.values():
+            algos = algos + algo_list
         # MERGE TISSUE ANNDATA
         # each tissue has slice_id as 3rd coordinate and windows_size as 4rd coordinate in tissue.obsm['spatial']
-        merged_tissue = ad.concat([a.get_tissue() for a in list(algo_dict.values())], axis=0, join='outer')
+        merged_tissue = ad.concat([a.get_tissue() for a in algos], axis=0, join='outer')
 
         # CLUSTERING (WINDOW_LABELS)
         sc.pp.neighbors(merged_tissue, use_rep='X')
