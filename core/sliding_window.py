@@ -9,7 +9,6 @@ from anndata import AnnData
 from .utils import timeit
 from core import CommunityClusteringAlgo
 
-
 class SlidingWindow(CommunityClusteringAlgo):
     def __init__(self, adata, slice_id, input_file_path, **params):
         super().__init__(adata, slice_id, input_file_path,  **params)
@@ -34,6 +33,7 @@ class SlidingWindow(CommunityClusteringAlgo):
 
 
     def calc_feature_matrix(self):
+
         # window size needs to be a multiple of sliding step
         self.sliding_step = (self.win_size/int((self.win_size/self.sliding_step))) if self.sliding_step!=None else self.win_size
         bin_slide_ratio = int(self.win_size/self.sliding_step)
@@ -89,7 +89,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.tissue = AnnData(feature_matrix.astype(np.float32), dtype=np.float32)
         # spatial coordinates are expanded with 3rd dimension with slice_id 
         # this should enable calculation of multislice cell communities
-        self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1], self.slice_id] for x in feature_matrix.index]).astype(int)
+        self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1], self.slice_id, self.win_size] for x in feature_matrix.index]).astype(int)
 
     def community_calling(self):
         bin_slide_ratio = int(self.win_size/self.sliding_step)
@@ -98,7 +98,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         # max voting on cluster labels
         # init the new obs column
         self.tissue.obs['leiden_max_vote'] = list('x' for x in range(len(self.tissue.obs.index)))
-        for x_curr, y_curr, _ in self.tissue.obsm['spatial']:
+        for x_curr, y_curr, _, _ in self.tissue.obsm['spatial']:
             # index of subwindow is in the top left corner of the whole window
             subwindow_labels = {}
             for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
