@@ -13,7 +13,7 @@ from core import CommunityClusteringAlgo
 class SlidingWindow(CommunityClusteringAlgo):
     def __init__(self, adata, slice_id, input_file_path, **params):
         super().__init__(adata, slice_id, input_file_path,  **params)
-        self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{self.win_size}_ss{self.sliding_step}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}"
+        self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{self.win_size}_ss{self.sliding_step}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_tn{self.total_cell_norm}_mcc{self.min_cells_coeff}"
         self.filename = self.adata.uns['sample_name'] + self.params_suffix
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
         # create results folder
@@ -76,13 +76,7 @@ class SlidingWindow(CommunityClusteringAlgo):
                         feature_matrix[subwindow] = {k: 
                                                     feature_matrix[subwindow].get(k, 0) + ret[f'{x_curr + slide_x}_{y_curr + slide_y}'].get(k, 0)
                                                     for k in set(feature_matrix[subwindow]).union(ret[f'{x_curr + slide_x}_{y_curr + slide_y}'])}
-            # # scale the feature values by the number of summed subwindows that form it (it could be useful as feature vector normalization)
-            # feature_matrix[subwindow] = {k:feature_matrix[subwindow][k]/num_subw for k in feature_matrix[subwindow].keys()}
-            
-            # scale the feature vector by the total numer of cells in it
-            norm_factor = self.total_cell_norm/sum(feature_matrix[subwindow].values())
-            for k in feature_matrix[subwindow]:
-                feature_matrix[subwindow][k] = np.float32(feature_matrix[subwindow][k] * norm_factor)
+
                 
         feature_matrix = pd.DataFrame(feature_matrix).T
         # feature_matrix is placd in AnnData object with specified spatial cooridnated of the sliding windows
@@ -90,6 +84,15 @@ class SlidingWindow(CommunityClusteringAlgo):
         # spatial coordinates are expanded with 3rd dimension with slice_id 
         # this should enable calculation of multislice cell communities
         self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1], self.slice_id] for x in feature_matrix.index]).astype(int)
+        self.tissue.obs = self.tissue.obs.copy()
+        self.tissue.obs['window_cell_sum'] = np.sum(self.tissue.X, axis=1)
+        # remove feature vectors which have less than a specified amount of time
+        mean_cell_sum = np.mean(self.tissue.obs['window_cell_sum'].values)
+        stddev_cell_sum = np.std(self.tissue.obs['window_cell_sum'].values)
+        min_cells_per_window = mean_cell_sum - self.min_cells_coeff * stddev_cell_sum
+        self.tissue = self.tissue[self.tissue.obs['window_cell_sum'].values >= min_cells_per_window, :]
+        # scale the feature vector by the total numer of cells in it
+        self.tissue.X = ((self.tissue.X.T * self.total_cell_norm) / self.tissue.obs['window_cell_sum'].values).T
 
     def community_calling(self):
         bin_slide_ratio = int(self.win_size/self.sliding_step)
@@ -110,9 +113,14 @@ class SlidingWindow(CommunityClusteringAlgo):
             
             # max vote
             # max vote should be saved in a new obs column so that it does not have diagonal effect on
-            # other labels during refinment
+            # other labels during refinement
+            # max_voting result is created for each subwindow, while the 'leiden' clustering was defined for each window
             self.tissue.obs.loc[f'{x_curr}_{y_curr}', 'leiden_max_vote'] = max(subwindow_labels, key=subwindow_labels.get)
 
-        self.adata.obs[f'tissue_{self.method_key}'] = list(self.tissue.obs.loc[self.adata.obs['x_y'], 'leiden_max_vote'])
+        # since tissue does not have all the indexes, for the ones without enough cells are removed we need to initialize
+        # self.adata.obs for method results
+        self.adata.obs[f'tissue_{self.method_key}'] = np.nan
+        idx_mask = self.adata.obs['x_y'].isin(self.tissue.obs.index)
+        self.adata.obs.loc[idx_mask, f'tissue_{self.method_key}'] = list(self.tissue.obs.loc[self.adata.obs.loc[idx_mask, 'x_y'], 'leiden_max_vote'])
 
         logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')

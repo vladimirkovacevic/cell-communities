@@ -31,6 +31,7 @@ if __name__ == '__main__':
     parser.add_argument('--sliding_step', help='Slide step for sliding window method', type=int, required=False, default=50)
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
+    parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
 
 
     args = parser.parse_args()
@@ -75,14 +76,20 @@ if __name__ == '__main__':
                 algo.plot_annotation()
             # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness
             algo.run()
-
+            if args.plotting > 1:
+                algo.plot_histogram_cell_sum_window()
             # CELL TYPE FILTERING
             # [NOTE] This is not valid for multislice. A consensus on removing a cell type must
             # be made for all slices before removing it from any slice.
             # here I have tissue, I want to calculate entropy and scatteredness for each cell type in adata
             # and based on this information remove certain cell types
-            algo.tissue.var['entropy'], algo.tissue.var['scatteredness'], algo.tissue.uns['cell_t_images'] = \
+            entropy, scatteredness, cell_type_images = \
                 calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
+            algo.tissue.var['entropy'] = ''
+            algo.tissue.var.loc[:, 'entropy'] = entropy.loc[algo.tissue.var.index]
+            algo.tissue.var['scatteredness'] = ''
+            algo.tissue.var.loc[:, 'scatteredness'] = scatteredness.loc[algo.tissue.var.index]
+            algo.tissue.uns['cell_t_images'] = cell_type_images
             # save a .csv file with metrics per cell type
             algo.save_metrics()
             # plot binary images of cell types spatial positions
