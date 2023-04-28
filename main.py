@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser.add_argument('--entropy_thres', help='Threshold value for spatial cell type entropy for filtering out overdispersed cell types', type=float, required=False, default=1.0)
     parser.add_argument('--scatter_thres', help='Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types', type=float, required=False, default=1.0)
     parser.add_argument('-w', '--win_sizes', help='Comma separated list of windows sizes', type=str,required=False, default='150')
-    parser.add_argument('--sliding_step', help='Slide step for sliding window method', type=int, required=False, default=50)
+    parser.add_argument('--sliding_steps', help='Slide step for sliding window method', type=int, required=False, default='50')
 
     args = parser.parse_args()
 
@@ -55,6 +55,9 @@ if __name__ == '__main__':
     win_sizes_split = args.win_sizes.split(',')
     win_size_list = [int(w) for w in win_sizes_split]
 
+    sliding_steps_split = args.sliding_steps.split(',')
+    sliding_step_list = [int(s) for s in sliding_steps_split]
+
     # Process requested methods
     for method in all_methods:
         algo_dict = {}
@@ -72,8 +75,9 @@ if __name__ == '__main__':
                 raise AttributeError(f"File '{file}' extension is not .h5ad") # or .gef
 
             # FOR
-            for win_size in win_size_list:
+            for win_size, sliding_step in zip(win_size_list, sliding_step_list):
                 args.win_size = win_size
+                args.sliding_step = sliding_step
                 # FEATURE EXTRACTION (SLIDING_WINDOW)
                 algo = all_methods[method](adata, slice_id, file, **vars(args))
                 # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness

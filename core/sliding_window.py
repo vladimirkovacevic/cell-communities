@@ -89,7 +89,8 @@ class SlidingWindow(CommunityClusteringAlgo):
         # spatial coordinates are expanded with 3rd dimension with slice_id 
         # this should enable calculation of multislice cell communities
         self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1], self.slice_id] for x in feature_matrix.index]).astype(int)
-        self.tissue.obsm['window_size'] = self.win_size
+        self.tissue.obsm['window_size'] = [self.window_size for _ in len(feature_matrix.index)]
+        self.tissue.obsm['sliding_step'] = [self.sliding_step for _ in len(feature_matrix.index)]
 
     def community_calling(self):
         bin_slide_ratio = int(self.win_size/self.sliding_step)
@@ -98,6 +99,8 @@ class SlidingWindow(CommunityClusteringAlgo):
         # max voting on cluster labels
         # init the new obs column
         self.tissue.obs['leiden_max_vote'] = list('x' for x in range(len(self.tissue.obs.index)))
+        
+        
         for x_curr, y_curr, _ in self.tissue.obsm['spatial']:
             # index of subwindow is in the top left corner of the whole window
             subwindow_labels = {}

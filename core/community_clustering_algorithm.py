@@ -54,7 +54,7 @@ class CommunityClusteringAlgo(ABC):
     def set_clustering_labels(self, labels):
         # to prevent warning about appending data to a view of obs
         self.tissue.obs = self.tissue.obs.copy()
-        self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)
+        self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)   # index ovde? Moram da dodam i windows size za windows
    
     def cell_type_filtering(self):
         # extract binary image of cell positions for each cell type in the slice
