@@ -81,8 +81,13 @@ if __name__ == '__main__':
             # be made for all slices before removing it from any slice.
             # here I have tissue, I want to calculate entropy and scatteredness for each cell type in adata
             # and based on this information remove certain cell types
-            algo.tissue.var['entropy'], algo.tissue.var['scatteredness'], algo.tissue.uns['cell_t_images'] = \
+            entropy, scatteredness, cell_type_images = \
                 calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
+            algo.tissue.var['entropy'] = ''
+            algo.tissue.var.loc[:, 'entropy'] = entropy.loc[algo.tissue.var.index]
+            algo.tissue.var['scatteredness'] = ''
+            algo.tissue.var.loc[:, 'scatteredness'] = scatteredness.loc[algo.tissue.var.index]
+            algo.tissue.uns['cell_t_images'] = cell_type_images
             # save a .csv file with metrics per cell type
             algo.save_metrics()
             # plot binary images of cell types spatial positions
