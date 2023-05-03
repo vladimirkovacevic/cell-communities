@@ -13,7 +13,7 @@ from core import CommunityClusteringAlgo
 class SlidingWindow(CommunityClusteringAlgo):
     def __init__(self, adata, slice_id, input_file_path, **params):
         super().__init__(adata, slice_id, input_file_path,  **params)
-        self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{self.win_size}_ss{self.sliding_step}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_tn{self.total_cell_norm}_mcc{self.min_cells_coeff}"
+        self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{self.win_size}_ss{self.sliding_step}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc{self.min_cells_coeff}"
         self.filename = self.adata.uns['sample_name'] + self.params_suffix
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
         # create results folder
