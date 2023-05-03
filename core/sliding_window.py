@@ -84,41 +84,49 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.tissue.obsm['spatial'] = np.array([x.split('_') for x in feature_matrix.index]).astype(int)
         self.tissue.obs = self.tissue.obs.copy()
         self.tissue.obs['window_cell_sum'] = np.sum(self.tissue.X, axis=1)
+        # scale the feature vector by the total numer of cells in it
+        self.tissue.X = ((self.tissue.X.T * self.total_cell_norm) / self.tissue.obs['window_cell_sum'].values).T
         # remove feature vectors which have less than a specified amount of cells
         mean_cell_sum = np.mean(self.tissue.obs['window_cell_sum'].values)
         stddev_cell_sum = np.std(self.tissue.obs['window_cell_sum'].values)
         min_cells_per_window = mean_cell_sum - self.min_cells_coeff * stddev_cell_sum
-        self.tissue = self.tissue[self.tissue.obs['window_cell_sum'].values >= min_cells_per_window, :]
-        # scale the feature vector by the total numer of cells in it
-        self.tissue.X = ((self.tissue.X.T * self.total_cell_norm) / self.tissue.obs['window_cell_sum'].values).T
+        self.tissue_pruned = self.tissue[self.tissue.obs['window_cell_sum'].values >= min_cells_per_window, :].copy()
 
+    ## COMMUNITY CALLING
+    # Define subwindow cluster label based on labels of all overlapping windows
+    # Functions goes through all subwindow positions and gathers clustering
+    # labels of all windows that contain it. Final label of the subwindow is
+    # the one with majority vote. Window cluster labels are in self.tissue_pruned.obs['leiden']
+    # and the subwindow labels are placed in self.tissue.obs['leiden_max_vote']
+    # self.tissue_pruned is used only for clustering and is discarded
     def community_calling(self):
         bin_slide_ratio = int(self.win_size/self.sliding_step)
         x_min = self.adata.obs['Centroid_X'].min()
         y_min = self.adata.obs['Centroid_Y'].min()
         # max voting on cluster labels
         # init the new obs column
-        self.tissue.obs['leiden_max_vote'] = list('x' for x in range(len(self.tissue.obs.index)))
+        self.tissue.obs = self.tissue.obs.copy()
+        self.tissue.obs['leiden_max_vote'] = np.nan
         for x_curr, y_curr, z_curr in self.tissue.obsm['spatial']:
             # index of subwindow is in the top left corner of the whole window
             subwindow_labels = {}
             for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
                 for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
                     # check if location exist (spatial area is not complete)
-                    if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}') in self.tissue.obs.index:
-                        new_value = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}', 'leiden']
+                    if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}') in self.tissue_pruned.obs.index:
+                        new_value = self.tissue_pruned.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}', 'leiden']
                         subwindow_labels[new_value] = subwindow_labels[new_value] + 1 if new_value in subwindow_labels.keys() else 1
             
-            # max vote
+            # MAX VOTE
             # max vote should be saved in a new obs column so that it does not have diagonal effect on
             # other labels during refinement
             # max_voting result is created for each subwindow, while the 'leiden' clustering was defined for each window
-            self.tissue.obs.loc[f'{x_curr}_{y_curr}_{z_curr}', 'leiden_max_vote'] = max(subwindow_labels, key=subwindow_labels.get)
+            self.tissue.obs.loc[f'{x_curr}_{y_curr}_{z_curr}', 'leiden_max_vote'] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else np.nan
 
-        # since tissue does not have all the indexes, for the ones without enough cells are removed we need to initialize
-        # self.adata.obs for method results
-        self.adata.obs[f'tissue_{self.method_key}'] = np.nan
-        idx_mask = self.adata.obs['window_spatial'].isin(self.tissue.obs.index)
-        self.adata.obs.loc[idx_mask, f'tissue_{self.method_key}'] = list(self.tissue.obs.loc[self.adata.obs.loc[idx_mask, 'window_spatial'], 'leiden_max_vote'])
+        # copy clustering results from subwindows to cells of those subwindows in adata object
+        self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(self.tissue.obs.loc[self.adata.obs['window_spatial'], 'leiden_max_vote'])
 
         logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
+
+        # delete helper anndata object
+        del self.tissue_pruned

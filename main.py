@@ -103,7 +103,7 @@ if __name__ == '__main__':
         
         # MERGE TISSUE ANNDATA
         # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
-        merged_tissue = ad.concat([a.get_tissue() for a in algo_list], axis=0, join='outer')
+        merged_tissue = ad.concat([a.get_tissue_pruned() for a in algo_list], axis=0, join='outer')
 
         # CLUSTERING (WINDOW_LABELS)
         sc.pp.neighbors(merged_tissue, use_rep='X')
