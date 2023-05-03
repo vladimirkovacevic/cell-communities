@@ -117,7 +117,8 @@ if __name__ == '__main__':
             # COMMUNITY CALLING (MAJORITY VOTING)
             algo_list[slice_id].community_calling()
 
-            # save anndata object for further use
+            # save anndata objects for further use
+            algo_list[slice_id].save_adata()
             algo_list[slice_id].save_tissue()
 
             # PLOT COMMUNITIES & STATISTICS

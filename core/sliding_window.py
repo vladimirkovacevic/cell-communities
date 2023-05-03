@@ -86,7 +86,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.tissue.obsm['spatial'] = np.array([[x.split('_')[0], x.split('_')[1], self.slice_id] for x in feature_matrix.index]).astype(int)
         self.tissue.obs = self.tissue.obs.copy()
         self.tissue.obs['window_cell_sum'] = np.sum(self.tissue.X, axis=1)
-        # remove feature vectors which have less than a specified amount of time
+        # remove feature vectors which have less than a specified amount of cells
         mean_cell_sum = np.mean(self.tissue.obs['window_cell_sum'].values)
         stddev_cell_sum = np.std(self.tissue.obs['window_cell_sum'].values)
         min_cells_per_window = mean_cell_sum - self.min_cells_coeff * stddev_cell_sum

@@ -184,7 +184,13 @@ class CommunityClusteringAlgo(ABC):
         # save anndata file
         self.tissue.write_h5ad(os.path.join(self.dir_path, f'tissue_{self.filename}{suffix}.h5ad'), compression="gzip")
 
-        logging.info(f'Saved clustering result tissue_{self.filename}.h5ad.')
+        logging.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
+
+    def save_adata(self, suffix=''):
+        # save anndata file
+        self.adata.write_h5ad(os.path.join(self.dir_path, f'{self.filename}{suffix}.h5ad'), compression="gzip")
+
+        logging.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
 
     def save_mixture_stats(self):
         # save cell mixture statistics
