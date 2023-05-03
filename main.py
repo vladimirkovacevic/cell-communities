@@ -27,10 +27,11 @@ if __name__ == '__main__':
     parser.add_argument('--downsample_rate', help='Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics', type=int,required=False, default=80)
     parser.add_argument('--entropy_thres', help='Threshold value for spatial cell type entropy for filtering out overdispersed cell types', type=float, required=False, default=1.0)
     parser.add_argument('--scatter_thres', help='Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types', type=float, required=False, default=1.0)
-    parser.add_argument('-w', '--win_sizes', help='Comma separated list of window sizes for analyzing the cell community', type=str, required=False, default='150')
+    parser.add_argument('-w', '--win_sizes', help='Comma separated list of window sizes for analyzing the cell community', type=str,required=False, default='150')
     parser.add_argument('--sliding_steps', help='Comma separated list of sliding steps for sliding window', type=str, required=False, default='50')
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
+    parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
 
 
     args = parser.parse_args()
@@ -55,10 +56,10 @@ if __name__ == '__main__':
     if 'sliding_window' in chosen_methods:
         all_methods['sliding_window'] = SlidingWindowMultipleSizes
     
+
     args.win_sizes_list = [int(w) for w in args.win_sizes.split(',')]
     args.sliding_steps_list = [int(s) for s in args.sliding_steps.split(',')]
 
-    
     # Process requested methods
     for method in all_methods:
         algo_list = []
@@ -79,14 +80,20 @@ if __name__ == '__main__':
                 algo.plot_annotation()
             # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness
             algo.run()
-
+            if args.plotting > 1:
+                algo.plot_histogram_cell_sum_window()
             # CELL TYPE FILTERING
             # [NOTE] This is not valid for multislice. A consensus on removing a cell type must
             # be made for all slices before removing it from any slice.
             # here I have tissue, I want to calculate entropy and scatteredness for each cell type in adata
             # and based on this information remove certain cell types
-            algo.tissue.var['entropy'], algo.tissue.var['scatteredness'], algo.tissue.uns['cell_t_images'] = \
+            entropy, scatteredness, cell_type_images = \
                 calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
+            algo.tissue.var['entropy'] = ''
+            algo.tissue.var.loc[:, 'entropy'] = entropy.loc[algo.tissue.var.index]
+            algo.tissue.var['scatteredness'] = ''
+            algo.tissue.var.loc[:, 'scatteredness'] = scatteredness.loc[algo.tissue.var.index]
+            algo.tissue.uns['cell_t_images'] = cell_type_images
             # save a .csv file with metrics per cell type
             algo.save_metrics()
             # plot binary images of cell types spatial positions
