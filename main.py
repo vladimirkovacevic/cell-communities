@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--files', help='csv list of file paths to file that contain data to be analyzed/clustered', type=str, required=True)
     parser.add_argument('-t', '--tfile', help='File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix', type=str, required=False, default=None)
     parser.add_argument('-a', '--annotation', help='Annotation label for cell types', type=str, required=True)
-    parser.add_argument('-m', '--methods', help='Comma separated list of methods to perform. Available: sliding_window, multi_windows', type=str, default='sliding_window')
+    parser.add_argument('-m', '--methods', help='Comma separated list of methods to perform. Available: sliding_window', type=str, default='sliding_window')
     parser.add_argument('-o', '--out_path', help='Absolute path to store outputs', type=str, default='results')
     parser.add_argument('-r', '--resolution', help='All: Resolution of the clustering algorithm', type=float, required=False, default=0.2)
     parser.add_argument('-s', '--spot_size', help='Size of the spot on plot', type=float, required=False, default=30)
@@ -27,8 +27,8 @@ if __name__ == '__main__':
     parser.add_argument('--downsample_rate', help='Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics', type=int,required=False, default=80)
     parser.add_argument('--entropy_thres', help='Threshold value for spatial cell type entropy for filtering out overdispersed cell types', type=float, required=False, default=1.0)
     parser.add_argument('--scatter_thres', help='Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types', type=float, required=False, default=1.0)
-    parser.add_argument('-w', '--win_sizes', help='List of window sizes for analyzing the cell community', type=str, required=False, default='150')
-    parser.add_argument('--sliding_steps', help='List of sliding steps for sliding window or multi_windows methods', type=str, required=False, default='50')
+    parser.add_argument('-w', '--win_sizes', help='Comma separated list of window sizes for analyzing the cell community', type=str, required=False, default='150')
+    parser.add_argument('--sliding_steps', help='Comma separated list of sliding steps for sliding window', type=str, required=False, default='50')
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
 
@@ -46,20 +46,19 @@ if __name__ == '__main__':
         os.makedirs(args.out_path)
 
     # Parse requested and installed methods to make sure that requested methods are installed
-    available_methods = ['sliding_window', 'multi_windows']
+    available_methods = ['sliding_window']
 
     chosen_methods = args.methods.split(',')
     assert set(chosen_methods).issubset(set(available_methods)), \
         "The requested methods could not be executed because your environment lacks needed libraries."
     all_methods = {}  # Only one method for now
     if 'sliding_window' in chosen_methods:
-        all_methods['sliding_window'] = SlidingWindow
-    if 'multi_windows' in chosen_methods:
-        all_methods['multi_windows'] = SlidingWindowMultipleSizes
+        all_methods['sliding_window'] = SlidingWindowMultipleSizes
     
-    win_sizes_list = [int(w) for w in args.win_sizes.split(',')]
-    sliding_steps_list = [int(s) for s in args.sliding_steps.split(',')]
+    args.win_sizes_list = [int(w) for w in args.win_sizes.split(',')]
+    args.sliding_steps_list = [int(s) for s in args.sliding_steps.split(',')]
 
+    
     # Process requested methods
     for method in all_methods:
         algo_list = []
