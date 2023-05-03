@@ -85,9 +85,9 @@ if __name__ == '__main__':
             # and based on this information remove certain cell types
             entropy, scatteredness, cell_type_images = \
                 calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
-            algo.tissue.var['entropy'] = ''
+            # init var layer of tissue anndata object
+            algo.tissue.var = algo.tissue.var.copy()
             algo.tissue.var.loc[:, 'entropy'] = entropy.loc[algo.tissue.var.index]
-            algo.tissue.var['scatteredness'] = ''
             algo.tissue.var.loc[:, 'scatteredness'] = scatteredness.loc[algo.tissue.var.index]
             algo.tissue.uns['cell_t_images'] = cell_type_images
             # save a .csv file with metrics per cell type
