@@ -81,8 +81,7 @@ class SlidingWindow(CommunityClusteringAlgo):
 
                     
             feature_matrix = pd.DataFrame(feature_matrix).T
-            pd.concat([whole_feature_matrix, feature_matrix], axis = 0)
-        
+            whole_feature_matrix = pd.concat([whole_feature_matrix, feature_matrix], axis = 0)
 
         # feature_matrix is placd in AnnData object with specified spatial cooridnated of the sliding windows
         self.tissue = AnnData(whole_feature_matrix.astype(np.float32), dtype=np.float32)
