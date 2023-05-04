@@ -32,6 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
     parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
+    parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
+
 
 
     args = parser.parse_args()
@@ -118,7 +120,8 @@ if __name__ == '__main__':
             algo_list[slice_id].community_calling()
 
             # save anndata objects for further use
-            algo_list[slice_id].save_adata()
+            if args.save_adata:
+                algo_list[slice_id].save_adata()
             algo_list[slice_id].save_tissue()
 
             # PLOT COMMUNITIES & STATISTICS
