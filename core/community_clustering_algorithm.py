@@ -157,7 +157,7 @@ class CommunityClusteringAlgo(ABC):
         sc.settings.set_figure_params(dpi=100, facecolor='white')
 
         new_stats = stats.copy()
-        new_stats = new_stats.drop(labels='total_counts', axis=1)
+        new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
         new_stats = new_stats.drop(labels='total_cells', axis=0)
         for cluster in new_stats.iterrows():
             ct_perc = cluster[1].sort_values(ascending=False)
