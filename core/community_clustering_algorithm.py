@@ -52,10 +52,10 @@ class CommunityClusteringAlgo(ABC):
         pass
 
     def get_tissue(self):
-        return self.tissue.copy()
+        return self.tissue
     
     def get_tissue_pruned(self):
-        return self.tissue_pruned.copy()
+        return self.tissue_pruned
     
     def set_clustering_labels(self, labels):
         # to prevent warning about appending data to a view of obs
