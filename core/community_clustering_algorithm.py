@@ -22,6 +22,7 @@ class CommunityClusteringAlgo(ABC):
 
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
         self.tissue = None
+        self.tissue_pruned = None
         # [NOTE] this should be included later
         # # define if each cell type needs a minimum amount of cells to be considered in cell mixtures and what is the minimum value
         # min_count_per_type_limit = False
@@ -53,10 +54,13 @@ class CommunityClusteringAlgo(ABC):
     def get_tissue(self):
         return self.tissue
     
+    def get_tissue_pruned(self):
+        return self.tissue_pruned
+    
     def set_clustering_labels(self, labels):
         # to prevent warning about appending data to a view of obs
-        self.tissue.obs = self.tissue.obs.copy()
-        self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)
+        self.tissue_pruned.obs = self.tissue_pruned.obs.copy()
+        self.tissue_pruned.obs['leiden'] = pd.Series(labels, index=self.tissue_pruned.obs.index)
 
     def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
@@ -184,7 +188,13 @@ class CommunityClusteringAlgo(ABC):
         # save anndata file
         self.tissue.write_h5ad(os.path.join(self.dir_path, f'tissue_{self.filename}{suffix}.h5ad'), compression="gzip")
 
-        logging.info(f'Saved clustering result tissue_{self.filename}.h5ad.')
+        logging.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
+
+    def save_adata(self, suffix=''):
+        # save anndata file
+        self.adata.write_h5ad(os.path.join(self.dir_path, f'{self.filename}{suffix}.h5ad'), compression="gzip")
+
+        logging.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
 
     def save_mixture_stats(self):
         # save cell mixture statistics

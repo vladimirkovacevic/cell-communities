@@ -85,9 +85,9 @@ if __name__ == '__main__':
             # and based on this information remove certain cell types
             entropy, scatteredness, cell_type_images = \
                 calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
-            algo.tissue.var['entropy'] = ''
+            # init var layer of tissue anndata object
+            algo.tissue.var = algo.tissue.var.copy()
             algo.tissue.var.loc[:, 'entropy'] = entropy.loc[algo.tissue.var.index]
-            algo.tissue.var['scatteredness'] = ''
             algo.tissue.var.loc[:, 'scatteredness'] = scatteredness.loc[algo.tissue.var.index]
             algo.tissue.uns['cell_t_images'] = cell_type_images
             # save a .csv file with metrics per cell type
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         
         # MERGE TISSUE ANNDATA
         # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
-        merged_tissue = ad.concat([a.get_tissue() for a in algo_list], axis=0, join='outer')
+        merged_tissue = ad.concat([a.get_tissue_pruned() for a in algo_list], axis=0, join='outer')
 
         # CLUSTERING (WINDOW_LABELS)
         sc.pp.neighbors(merged_tissue, use_rep='X')
@@ -117,7 +117,8 @@ if __name__ == '__main__':
             # COMMUNITY CALLING (MAJORITY VOTING)
             algo_list[slice_id].community_calling()
 
-            # save anndata object for further use
+            # save anndata objects for further use
+            algo_list[slice_id].save_adata()
             algo_list[slice_id].save_tissue()
 
             # PLOT COMMUNITIES & STATISTICS
