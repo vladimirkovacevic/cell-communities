@@ -32,6 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
     parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
+    parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
+
 
 
     args = parser.parse_args()
@@ -56,7 +58,6 @@ if __name__ == '__main__':
     if 'sliding_window' in chosen_methods:
         all_methods['sliding_window'] = SlidingWindowMultipleSizes
     
-
     args.win_sizes_list = [int(w) for w in args.win_sizes.split(',')]
     args.sliding_steps_list = [int(s) for s in args.sliding_steps.split(',')]
 
@@ -89,9 +90,9 @@ if __name__ == '__main__':
             # and based on this information remove certain cell types
             entropy, scatteredness, cell_type_images = \
                 calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
-            algo.tissue.var['entropy'] = ''
+            # init var layer of tissue anndata object
+            algo.tissue.var = algo.tissue.var.copy()
             algo.tissue.var.loc[:, 'entropy'] = entropy.loc[algo.tissue.var.index]
-            algo.tissue.var['scatteredness'] = ''
             algo.tissue.var.loc[:, 'scatteredness'] = scatteredness.loc[algo.tissue.var.index]
             algo.tissue.uns['cell_t_images'] = cell_type_images
             # save a .csv file with metrics per cell type
@@ -121,7 +122,9 @@ if __name__ == '__main__':
             # COMMUNITY CALLING (MAJORITY VOTING)
             algo_list[slice_id].community_calling()
 
-            # save anndata object for further use
+            # save anndata objects for further use
+            if args.save_adata:
+                algo_list[slice_id].save_adata()
             algo_list[slice_id].save_tissue()
 
             # PLOT COMMUNITIES & STATISTICS

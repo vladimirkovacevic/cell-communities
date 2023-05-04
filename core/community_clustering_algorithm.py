@@ -67,7 +67,7 @@ class CommunityClusteringAlgo(ABC):
     def plot_histogram_cell_sum_window(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
         plt.hist(self.tissue.obs['window_cell_sum'].values)
-        figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws{self.win_sizes_list[0]}_ss{self.sliding_steps_list[0]}.png'), dpi=300, bbox_inches='tight')
+        figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws{self.win_sizes}_ss{self.sliding_steps}.png'), dpi=300, bbox_inches='tight')
         plt.close()
    
     def cell_type_filtering(self):
@@ -177,14 +177,20 @@ class CommunityClusteringAlgo(ABC):
 
     def save_metrics(self):
         # save metrics results in csv format
-        print(self.tissue.var[['entropy', 'scatteredness']])
+        # print(self.tissue.var[['entropy', 'scatteredness']])
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
 
     def save_tissue(self, suffix=''):
         # save anndata file
         self.tissue.write_h5ad(os.path.join(self.dir_path, f'tissue_{self.filename}{suffix}.h5ad'), compression="gzip")
 
-        logging.info(f'Saved clustering result tissue_{self.filename}.h5ad.')
+        logging.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
+
+    def save_adata(self, suffix=''):
+        # save anndata file
+        self.adata.write_h5ad(os.path.join(self.dir_path, f'{self.filename}{suffix}.h5ad'), compression="gzip")
+
+        logging.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
 
     def save_mixture_stats(self):
         # save cell mixture statistics
