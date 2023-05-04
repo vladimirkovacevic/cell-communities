@@ -3,6 +3,7 @@ import os
 from itertools import cycle
 from abc import ABC, abstractmethod
 
+import numpy as np
 import scanpy as sc
 import pandas as pd
 import seaborn as sns
@@ -120,6 +121,10 @@ class CommunityClusteringAlgo(ABC):
         for i in range(len(stats.index.values[:-1])):
             if stats.iloc[i,-1] > 0:
                 stats.iloc[i, :-1] = (100 * stats.iloc[i, :-1] / stats.iloc[i, -1]).astype(int)
+
+        # add column with percentage of all cells belonging to a cluster
+        stats['perc_of_all_cells'] = np.around(stats['total_counts'] / stats['total_counts'].sum() * 100, decimals=1)
+
         # save cell mixture statistics to csv file and to tissue
         self.tissue.uns['cell mixtures'] = stats.iloc[:, :]
 
@@ -166,7 +171,8 @@ class CommunityClusteringAlgo(ABC):
 
                 sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
                 ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]})' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
-                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False, frameon=False,)
+                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
+                ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]})' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
 
                 plt.close()
