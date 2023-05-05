@@ -125,7 +125,7 @@ class CommunityClusteringAlgo(ABC):
         # add column with percentage of all cells belonging to a cluster
         stats['perc_of_all_cells'] = np.around(stats['total_counts'] / stats['total_counts'].sum() * 100, decimals=1)
 
-        # save cell mixture statistics to csv file and to tissue
+        # save cell mixture statistics to tissue
         self.tissue.uns['cell mixtures'] = stats.iloc[:, :]
 
     def plot_stats(self):
@@ -177,6 +177,44 @@ class CommunityClusteringAlgo(ABC):
 
                 plt.close()
 
+    def boxplot_stats(self):
+        stats = self.tissue.uns['cell mixtures']
+        
+        # box plot per cluster of cell type percentages distribution
+        sc.settings.set_figure_params(dpi=100, facecolor='white')
+
+        # drop total_counts, perc_of_all_cells columns and total_cells row
+        new_stats = stats.copy()
+        new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
+        new_stats = new_stats.drop(labels='total_cells', axis=0)
+        for cluster in new_stats.iterrows():
+
+
+            win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster[0]] # this is going to be more noisy because
+            # the feature vector contains the cell mixture of the window which top left corner is in this subwindow
+            # thus, the label of the subwindow is correlated with the feature vector of bin_ratio times bigger window
+            # covering the the down right area from the subwindow.
+            win_cell_distrib_df = pd.DataFrame(win_cell_distrib.X / (self.total_cell_norm/100), columns=win_cell_distrib.var.index)
+
+            # Reshape data into long format
+            cell_type_distrib = pd.melt(win_cell_distrib_df, var_name='Cell Type', value_name='Percentage')
+            cell_type_distrib = cell_type_distrib.sort_values(by='Cell Type')
+            
+            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15,6))
+            # plot boxplot of cell type percentages per mixture
+            ax = sns.boxplot(x='Cell Type', y='Percentage', data=cell_type_distrib)
+            # overlap with a plot of specific percentage values. 
+            # Jitter allows dots to move left and right for better visibility of all points
+            ax = sns.stripplot(x='Cell Type', y='Percentage', data=cell_type_distrib, jitter=True, color='black', size=2)
+            # remove top and right frame of the plot
+            sns.despine(top=True, right=True)
+            ax.set_title(f'mixutre {cluster[0]} ({self.adata.uns["sample_name"]})')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+            ax.xaxis.tick_bottom() # x axis on the bottom
+            fig.savefig(os.path.join(self.dir_path, f'boxplot_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
+
+            plt.close()
+            
     def save_metrics(self):
         # save metrics results in csv format
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
