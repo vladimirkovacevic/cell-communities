@@ -120,9 +120,9 @@ if __name__ == '__main__':
         if not args.skip_stats:
             algo.calculate_cell_mixture_stats()
             algo.save_mixture_stats()
-            if args.plotting > 1:
+            if args.plotting > 2:
                 algo.plot_stats()
+                algo.boxplot_stats()
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
-
     logging.warning('END')
