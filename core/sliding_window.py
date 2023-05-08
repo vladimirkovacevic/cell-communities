@@ -28,7 +28,7 @@ class SlidingWindow(CommunityClusteringAlgo):
     @timeit
     def run(self):
         if self.tfile==None:
-            self.calc_feature_matrix()
+            self.calc_feature_matrix(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
             if self.tfile.endswith('.h5ad'):
                 self.tissue = sc.read(self.tfile)
@@ -36,12 +36,9 @@ class SlidingWindow(CommunityClusteringAlgo):
                 raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
 
 
-    def calc_feature_matrix(self):
-        win_size = self.win_sizes_list[0]
-        sliding_step = self.sliding_steps_list[0]
-
+    def calc_feature_matrix(self, win_size, sliding_step):
         # window size needs to be a multiple of sliding step
-        self.sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
+        sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
         bin_slide_ratio = int(win_size/sliding_step)
 
         # create centroids for each sliding step of windows
@@ -151,11 +148,10 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         tissue_list = []
 
         if self.tfile==None:
-            while len(self.win_sizes_list)>0:
-                super().calc_feature_matrix()
+            n = len(self.win_sizes_list)
+            for i in  range(n):
+                super().calc_feature_matrix(self.win_sizes_list[i], self.sliding_steps_list[i])
                 tissue_list.append(self.tissue)
-                del self.win_sizes_list[0]
-                del self.sliding_steps_list[0]
             
             self.tissue = ad.concat(tissue_list, axis=0, join='outer')
         else:
