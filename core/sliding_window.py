@@ -164,7 +164,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         if len(self.win_sizes_list) == 1 and len(self.sliding_steps_list) == 1:
             super().community_calling(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
-            self.community_calling_multiple_window_sizes_per_cell()
+            self.community_calling_multiple_window_sizes_per_cell_multiprocessing()
             logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
 
     @timeit
@@ -212,6 +212,67 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             self.adata.obs.loc[index, f'tissue_{self.method_key}'] = max_vote_label
         
         self.adata.obs[f'tissue_{self.method_key}'] = pd.Categorical(self.adata.obs[f'tissue_{self.method_key}'].fillna('unknown'))
+
+    @timeit
+    def community_calling_multiple_window_sizes_per_cell_multiprocessing(self):
+        """
+        Per every cell we have location of its subwindow in window_spatial_{win_size}.
+        We collect all windows that cover that subwindow in cell_labels_all. We repeat this for all window sizes 
+        and then perform majority voting to get the final label.
+        Cells are split into as many batches as there are available cpus and processed in parallel.
+        """
+        import multiprocessing as mp
+
+        #if cell batches are too small, caching is not efficient so we want at least 5000 cells per batch
+        num_cpus_used = mp.cpu_count() if mp.cpu_count() < self.adata.obs.shape[0] // 5000 else self.adata.obs.shape[0] // 5000
+
+        with mp.Pool(processes=num_cpus_used) as pool:
+            split_df = np.array_split(self.adata.obs, num_cpus_used)
+            partial_results = [result for result in pool.map(self.community_calling_partial, split_df)]
+        
+        self.adata.obs[f'tissue_{self.method_key}'] = pd.concat(partial_results)
+
+
+    def community_calling_partial(self, df):
+        x_min = self.adata.obs['Centroid_X'].min()
+        y_min = self.adata.obs['Centroid_Y'].min()
+        df[f'tissue_{self.method_key}'] = pd.Series(index=self.adata.obs.index, dtype=str)
+        cache = {}
+
+        for index, cell in tqdm(df.iterrows(), desc="Per cell computation in a subset of all cells... ", total=df.shape[0]):
+            cell_labels_all = defaultdict(int)
+
+            for win_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
+                sliding_step = (win_size/int((win_size/sliding_step)))
+                bin_slide_ratio = int(win_size/sliding_step)
+                cell_labels = defaultdict(int)
+                x_curr, y_curr, z_curr, w_size = [int(num) for num in cell[f'window_spatial_{win_size}'].split("_")]
+
+                if (x_curr, y_curr, z_curr, w_size) in cache:
+                    cell_labels = cache[(x_curr, y_curr, z_curr, w_size)]
+                    cell_labels_all = {
+                        key: cell_labels_all.get(key, 0) + cell_labels.get(key, 0)
+                        for key in set(cell_labels_all) | set(cell_labels)
+                    }
+                    continue
+                # index of cell is in the top left corner of the whole window
+                for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
+                    for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
+                        # check if location exist (spatial area is not complete)
+                        if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
+                            win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
+                            cell_labels[win_label] += 1
+
+                cache[(x_curr, y_curr, z_curr, w_size)] = cell_labels
+                cell_labels_all = {
+                    key: cell_labels_all.get(key, 0) + cell_labels.get(key, 0)
+                    for key in set(cell_labels_all) | set(cell_labels)
+                }
+            max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else np.nan
+            df.loc[index, f'tissue_{self.method_key}'] = max_vote_label
+        
+        df[f'tissue_{self.method_key}'] = pd.Categorical(df[f'tissue_{self.method_key}'].fillna('unknown'))
+        return df[f'tissue_{self.method_key}']
         
      # def community_calling_multiple_window_sizes_per_window(self):
     #     x_min = self.adata.obs['Centroid_X'].min()
