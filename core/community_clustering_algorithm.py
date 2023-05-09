@@ -220,9 +220,7 @@ class CommunityClusteringAlgo(ABC):
     def colorplot_stats(self, color_system='hsv'):
         stats = self.tissue.uns['cell mixtures']
         if color_system == 'hsv':
-            cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
             cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
-            cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
             cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
 
             new_stats = stats.copy()
@@ -240,7 +238,7 @@ class CommunityClusteringAlgo(ABC):
                 # The last is achieved by dividing the features with self.total_cell_norm
                 data_df = pd.DataFrame(data_fa.X/self.total_cell_norm, columns=data_fa.var.index, index=data_fa.obs.index)
                 # init image
-                mixture_image = np.zeros(shape=(int(np.ceil((cy_max-cy_min+1))), int(np.ceil((cx_max-cx_min+1))), 3), dtype=np.float32)
+                mixture_image = np.zeros(shape=(cy_max, cx_max, 3), dtype=np.float32)
 
 
                 # make background white by setting value plane to 1.0
@@ -250,7 +248,7 @@ class CommunityClusteringAlgo(ABC):
                 for window in data_df.iterrows():
                     wx = int(window[0].split("_")[0])
                     wy = int(window[0].split("_")[1])
-                    mixture_image[int(wy*self.sliding_step- cy_min) : int(wy*self.sliding_step + self.win_size - cy_min), int(wx*self.sliding_step - cx_min) : int(wx*self.sliding_step + self.win_size - cx_min), :] = 1-window[1].values.astype(np.float32)
+                    mixture_image[int(wy*self.sliding_step) : int(wy*self.sliding_step + self.win_size), int(wx*self.sliding_step) : int(wx*self.sliding_step + self.win_size), :] = 1-window[1].values.astype(np.float32)
                 
                 if color_system == 'hsv':
                     # convert DataFrame to HSV image
@@ -258,7 +256,8 @@ class CommunityClusteringAlgo(ABC):
 
                 # plot the HSV image
                 fig, ax = plt.subplots(nrows=1, ncols=1)
-                plt.imshow(rgb_image)
+                g = plt.imshow(rgb_image)
+                g = sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette='Greys', spot_size=self.spot_size, show=False, frameon=False)
                 plt.axis('off')
                 ax.grid(visible=False)
                 ax.set_title(f'{color_system} of mixutre {cluster[0]} - top 3 cell types\n({self.adata.uns["sample_name"]})')
