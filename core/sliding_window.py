@@ -251,5 +251,5 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else np.nan
             self.adata.obs.loc[index, f'tissue_{self.method_key}'] = max_vote_label
         
-        self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].fillna('-1')
+        self.adata.obs[f'tissue_{self.method_key}'] = pd.Categorical(self.adata.obs[f'tissue_{self.method_key}'].fillna('unknown'))
         
