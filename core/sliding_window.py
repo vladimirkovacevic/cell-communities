@@ -126,8 +126,8 @@ class SlidingWindow(CommunityClusteringAlgo):
             for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
                 for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
                     # check if location exist (spatial area is not complete)
-                    if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}') in self.tissue.obs.index:
-                        new_value = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}', 'leiden']
+                    if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
+                        new_value = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
                         subwindow_labels[new_value] = subwindow_labels[new_value] + 1 if new_value in subwindow_labels.keys() else 1
             
             # MAX VOTE

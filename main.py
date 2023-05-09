@@ -61,6 +61,8 @@ if __name__ == '__main__':
     args.win_sizes_list = [int(w) for w in args.win_sizes.split(',')]
     args.sliding_steps_list = [int(s) for s in args.sliding_steps.split(',')]
 
+    assert len(args.win_sizes_list) == len(args.sliding_steps_list), "The number of sliding steps must be equal to the number of window sizes."
+
     # Process requested methods
     for method in all_methods:
         algo_list = []
