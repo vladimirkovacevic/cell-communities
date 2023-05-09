@@ -3,11 +3,13 @@ import os
 from itertools import cycle
 from abc import ABC, abstractmethod
 
+from skimage import color
 import numpy as np
 import scanpy as sc
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+
 
 from .utils import timeit
 
@@ -24,6 +26,10 @@ class CommunityClusteringAlgo(ABC):
             setattr(self, key, value)
 
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
+        # self.cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
+        # self.cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
+        # self.cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
+        # self.cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
         self.tissue = None
 
         cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
@@ -214,6 +220,59 @@ class CommunityClusteringAlgo(ABC):
             fig.savefig(os.path.join(self.dir_path, f'boxplot_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
 
             plt.close()
+
+    def colorplot_stats(self, color_system='hsv'):
+        stats = self.tissue.uns['cell mixtures']
+        if color_system == 'hsv':
+            cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
+            cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
+            cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
+            cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
+
+            new_stats = stats.copy()
+            new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
+            new_stats = new_stats.drop(labels='total_cells', axis=0)
+            for cluster in new_stats.iterrows():
+                ct_perc = cluster[1].sort_values(ascending=False)
+                top_three_ct = ct_perc.index.values[0:3]
+
+                data_fa = self.tissue[self.tissue.obs['leiden'] == cluster[0]]
+                data_fa = data_fa[:, top_three_ct]
+
+                # data is a DataFrame with rows for each window, columns of 3 top most cell types for
+                # current cell mixture cluster, with data on cell type in percentages [0.00-1.00]
+                # The last is achieved by dividing the features with self.total_cell_norm
+                data_df = pd.DataFrame(data_fa.X/self.total_cell_norm, columns=data_fa.var.index, index=data_fa.obs.index)
+                # init image
+                mixture_image = np.zeros(shape=(int(np.ceil((cy_max-cy_min+1))), int(np.ceil((cx_max-cx_min+1))), 3), dtype=np.float32)
+
+
+                # make background white by setting value plane to 1.0
+                # window data will overwrite it in cluster specifc positions
+                mixture_image[:,:,2] =1.0
+            
+                for window in data_df.iterrows():
+                    wx = int(window[0].split("_")[0])
+                    wy = int(window[0].split("_")[1])
+                    mixture_image[int(wy*self.sliding_step- cy_min) : int(wy*self.sliding_step + self.win_size - cy_min), int(wx*self.sliding_step - cx_min) : int(wx*self.sliding_step + self.win_size - cx_min), :] = 1-window[1].values.astype(np.float32)
+                
+                if color_system == 'hsv':
+                    # convert DataFrame to HSV image
+                    rgb_image = color.hsv2rgb(mixture_image)
+
+                # plot the HSV image
+                fig, ax = plt.subplots(nrows=1, ncols=1)
+                plt.imshow(rgb_image)
+                plt.axis('off')
+                ax.grid(visible=False)
+                ax.set_title(f'{color_system} of mixutre {cluster[0]} - top 3 cell types\n({self.adata.uns["sample_name"]})')
+                ax.text(1.05, 0.5, f'Hue - {top_three_ct[0]}\nSaturation - {top_three_ct[1]}\nValue - {top_three_ct[2]}', transform=ax.transAxes, fontsize=12, va='center', ha='left')
+                fig.savefig(os.path.join(self.dir_path, f'colorplot_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight', dpi=200)
+
+                plt.close()
+        else:
+            logging.warn(f'Unsupported color system: {color_system}.')
+
             
     def save_metrics(self):
         # save metrics results in csv format
