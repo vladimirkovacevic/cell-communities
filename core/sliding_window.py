@@ -109,7 +109,8 @@ class SlidingWindow(CommunityClusteringAlgo):
     def community_calling(self):
         win_size = self.win_sizes_list[0]
         sliding_step = self.sliding_steps_list[0]
-
+        sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
+        
         bin_slide_ratio = int(win_size/sliding_step)
         x_min = self.adata.obs['Centroid_X'].min()
         y_min = self.adata.obs['Centroid_Y'].min()
@@ -162,8 +163,6 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                 raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
     
     def community_calling(self):
-        self.win_sizes_list = [int(w) for w in self.win_sizes.split(',')]
-        self.sliding_steps_list = [int(s) for s in self.sliding_steps.split(',')]
         if len(self.win_sizes_list) == 1 and len(self.sliding_steps_list) == 1:
             super().community_calling()
         else:
@@ -214,6 +213,11 @@ class SlidingWindowMultipleSizes(SlidingWindow):
 
     @timeit
     def community_calling_multiple_window_sizes_per_cell(self):
+        """
+        Per every cell we have location of its subwindow in window_spatial_{win_size}.
+        We collect all windows that cover that subwindow in cell_labels_all. We repeat this for all window sizes 
+        and then perform majority voting to get the final label.
+        """
         x_min = self.adata.obs['Centroid_X'].min()
         y_min = self.adata.obs['Centroid_Y'].min()
         self.adata.obs[f'tissue_{self.method_key}'] = pd.Series(index=self.adata.obs.index, dtype=str)
@@ -223,7 +227,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             cell_labels_all = defaultdict(int)
 
             for win_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
-                sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
+                sliding_step = (win_size/int((win_size/sliding_step)))
                 bin_slide_ratio = int(win_size/sliding_step)
                 cell_labels = defaultdict(int)
                 x_curr, y_curr, z_curr, w_size = [int(num) for num in cell[f'window_spatial_{win_size}'].split("_")]
