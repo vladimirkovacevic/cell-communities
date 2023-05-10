@@ -224,8 +224,12 @@ class CommunityClusteringAlgo(ABC):
             plt.close()
 
     def colorplot_stats(self, color_system='hsv'):
-        stats = self.tissue.uns['cell mixtures']
-        if color_system == 'hsv':
+        supported_color_systems = ['hsv', 'rgb']
+        if color_system in supported_color_systems:
+            stats = self.tissue.uns['cell mixtures']
+
+            cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
+            cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
             cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
             cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
 
@@ -244,28 +248,43 @@ class CommunityClusteringAlgo(ABC):
                 # The last is achieved by dividing the features with self.total_cell_norm
                 data_df = pd.DataFrame(data_fa.X/self.total_cell_norm, columns=data_fa.var.index, index=data_fa.obs.index)
                 # init image
-                mixture_image = np.zeros(shape=(cy_max, cx_max, 3), dtype=np.float32)
+                mixture_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
 
                 for window in data_df.iterrows():
                     wx = int(window[0].split("_")[0])
                     wy = int(window[0].split("_")[1])
-                    mixture_image[int(wy*self.sliding_step) : int(wy*self.sliding_step + self.win_size), int(wx*self.sliding_step) : int(wx*self.sliding_step + self.win_size), :] = 1-window[1].values.astype(np.float32)
+                    mixture_image[int(wy*self.sliding_step-cy_min) : int(wy*self.sliding_step + self.win_size-cy_min), int(wx*self.sliding_step-cx_min) : int(wx*self.sliding_step + self.win_size-cx_min), :] = window[1].values.astype(np.float32)
                 
-                # convert DataFrame to HSV image
-                rgb_image = color.hsv2rgb(mixture_image)
-
-                # plot the HSV image
+                # convert image of selected color representation to rgb
+                if color_system == 'hsv':
+                    # if hsv display the 1 - percentage since the colors will be too dark
+                    rgb_image = color.hsv2rgb(1-mixture_image)
+                elif color_system == 'rgb':
+                    rgb_image = mixture_image
+                # plot the colored window image of the cell scatterplot
                 fig, ax = plt.subplots(nrows=1, ncols=1)
-                plt.scatter(x = self.adata.obsm['spatial'][:,1], y=self.adata.obsm['spatial'][:,0], c='#BFBFBF', marker='.', s=0.5, zorder=1)
+                # cell scatterplot for visual spatial reference
+                plt.scatter(x = self.adata.obsm['spatial'][:,1]-cy_min, y=self.adata.obsm['spatial'][:,0]-cx_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
+                # mask of window positions
                 window_mask = rgb_image[:,:,0] != 0
+                # mask adjusted to alpha channel and added to rgb image
                 window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
                 rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
+                # plot windows, where empty areas will have alpha=0, making them transparent
                 plt.imshow(rgba_image, zorder=2)
                 plt.axis('off')
                 ax.grid(visible=False)
                 ax.set_title(f'{color_system} of mixutre {cluster[0]} - top 3 cell types\n({self.adata.uns["sample_name"]})')
-                ax.text(1.05, 0.5, f'Hue - {top_three_ct[0]}\nSaturation - {top_three_ct[1]}\nValue - {top_three_ct[2]}', transform=ax.transAxes, fontsize=12, va='center', ha='left')
-                fig.savefig(os.path.join(self.dir_path, f'colorplot_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight', dpi=200)
+                
+                if color_system == 'hsv':
+                    plane_names = ['(1-H)', '(1-S)', '(1-V)']
+                elif color_system == 'rgb':
+                    plane_names = ['R', 'G', 'B']
+                
+                ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
+                            transform=ax.transAxes, fontsize=12, va='center', ha='left')
+        
+                fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight', dpi=200)
 
                 plt.close()
         else:

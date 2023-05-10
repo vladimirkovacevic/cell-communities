@@ -30,6 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
     parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
+    parser.add_argument('--color_plot_system', help='Color system for display of cluster specific windows.', type=str, required=False, default='hsv', choices={'hsv', 'rgb'})
     parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
     parser.add_argument('--min_count_per_type', help='Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages)', type=float, required=False, default=0.1)
 
@@ -121,11 +122,10 @@ if __name__ == '__main__':
             algo.calculate_cell_mixture_stats()
             algo.save_mixture_stats()
             if args.plotting > 1:
-
                 algo.plot_stats()
             if args.plotting > 2:
                 algo.boxplot_stats()
-                algo.colorplot_stats()
+                algo.colorplot_stats(color_system=args.color_plot_system)
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
 
