@@ -125,10 +125,12 @@ if __name__ == '__main__':
             algo.calculate_cell_mixture_stats()
             algo.save_mixture_stats()
             if args.plotting > 1:
+
                 algo.plot_stats()
             if args.plotting > 2:
                 algo.boxplot_stats()
                 algo.colorplot_stats()
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
+
     logging.warning('END')
