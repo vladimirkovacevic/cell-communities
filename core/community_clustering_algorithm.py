@@ -67,7 +67,7 @@ class CommunityClusteringAlgo(ABC):
     def plot_histogram_cell_sum_window(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
         plt.hist(self.tissue.obs['window_cell_sum'].values)
-        figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws{self.win_sizes}_ss{self.sliding_steps}.png'), dpi=300, bbox_inches='tight')
+        figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws_{"_".join([str(i) for i in self.win_sizes_list])}.png'), dpi=300, bbox_inches='tight')
         plt.close()
    
     def cell_type_filtering(self):

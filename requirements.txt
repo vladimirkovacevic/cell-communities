@@ -8,3 +8,4 @@ scikit-learn
 scipy
 seaborn
 anndata
+tqdm

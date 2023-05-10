@@ -1,14 +1,14 @@
 import logging
 import os
-from collections import Counter
+import multiprocessing as mp
 from collections import defaultdict
-from tqdm.auto import tqdm
 
 import scanpy as sc
 import numpy as np
 import pandas as pd
-from anndata import AnnData
 import anndata as ad
+from anndata import AnnData
+from tqdm.auto import tqdm
 
 from .utils import timeit
 from core import CommunityClusteringAlgo
@@ -17,7 +17,11 @@ from core import CommunityClusteringAlgo
 class SlidingWindow(CommunityClusteringAlgo):
     def __init__(self, adata, slice_id, input_file_path, **params):
         super().__init__(adata, slice_id, input_file_path,  **params)
-        self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{self.win_sizes}_ss{self.sliding_steps}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc{self.min_cells_coeff}"
+        self.win_sizes_list = [int(w) for w in self.win_sizes.split(',')]
+        self.sliding_steps_list = [int(s) for s in self.sliding_steps.split(',')]
+        assert len(self.win_sizes_list) == len(self.sliding_steps_list), "The number of sliding steps must be equal to the number of window sizes."
+        win_sizes = "_".join([str(i) for i in self.win_sizes_list])
+        self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{win_sizes}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc{self.min_cells_coeff}"
         self.filename = self.adata.uns['sample_name'] + self.params_suffix
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
         # create results folder
@@ -87,7 +91,6 @@ class SlidingWindow(CommunityClusteringAlgo):
         # spatial coordinates are expanded with 3rd dimension with slice_id 
         # this should enable calculation of multislice cell communities
         self.tissue.obsm['spatial'] = np.array([x.split('_') for x in feature_matrix.index]).astype(int)
-        # self.tissue.obsm['window_size'] = np.array([win_size for _ in feature_matrix.index])
         self.tissue.obs['window_size'] = np.array([win_size for _ in feature_matrix.index])
         self.tissue.obs = self.tissue.obs.copy()
         self.tissue.obs['window_cell_sum'] = np.sum(self.tissue.X, axis=1)
@@ -190,20 +193,16 @@ class SlidingWindowMultipleSizes(SlidingWindow):
 
                 if (x_curr, y_curr, z_curr, w_size) in cache:
                     cell_labels = cache[(x_curr, y_curr, z_curr, w_size)]
-                    cell_labels_all = {
-                        key: cell_labels_all.get(key, 0) + cell_labels.get(key, 0)
-                        for key in set(cell_labels_all) | set(cell_labels)
-                    }
-                    continue
-                # index of cell is in the top left corner of the whole window
-                for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
-                    for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
-                        # check if location exist (spatial area is not complete)
-                        if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
-                            win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
-                            cell_labels[win_label] += 1
+                else:
+                    # index of cell is in the top left corner of the whole window
+                    for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
+                        for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
+                            # check if location exist (spatial area is not complete)
+                            if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
+                                win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
+                                cell_labels[win_label] += 1
 
-                cache[(x_curr, y_curr, z_curr, w_size)] = cell_labels
+                    cache[(x_curr, y_curr, z_curr, w_size)] = cell_labels
                 cell_labels_all = {
                     key: cell_labels_all.get(key, 0) + cell_labels.get(key, 0)
                     for key in set(cell_labels_all) | set(cell_labels)
@@ -221,10 +220,8 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         and then perform majority voting to get the final label.
         Cells are split into as many batches as there are available cpus and processed in parallel.
         """
-        import multiprocessing as mp
-
         #if cell batches are too small, caching is not efficient so we want at least 5000 cells per batch
-        num_cpus_used = mp.cpu_count() if mp.cpu_count() < self.adata.obs.shape[0] // 5000 else self.adata.obs.shape[0] // 5000
+        num_cpus_used = mp.cpu_count() if mp.cpu_count() < self.num_threads else self.num_threads
 
         with mp.Pool(processes=num_cpus_used) as pool:
             split_df = np.array_split(self.adata.obs, num_cpus_used)
@@ -250,20 +247,17 @@ class SlidingWindowMultipleSizes(SlidingWindow):
 
                 if (x_curr, y_curr, z_curr, w_size) in cache:
                     cell_labels = cache[(x_curr, y_curr, z_curr, w_size)]
-                    cell_labels_all = {
-                        key: cell_labels_all.get(key, 0) + cell_labels.get(key, 0)
-                        for key in set(cell_labels_all) | set(cell_labels)
-                    }
                     continue
-                # index of cell is in the top left corner of the whole window
-                for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
-                    for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
-                        # check if location exist (spatial area is not complete)
-                        if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
-                            win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
-                            cell_labels[win_label] += 1
+                else:
+                    # index of cell is in the top left corner of the whole window
+                    for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
+                        for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
+                            # check if location exist (spatial area is not complete)
+                            if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
+                                win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
+                                cell_labels[win_label] += 1
 
-                cache[(x_curr, y_curr, z_curr, w_size)] = cell_labels
+                    cache[(x_curr, y_curr, z_curr, w_size)] = cell_labels
                 cell_labels_all = {
                     key: cell_labels_all.get(key, 0) + cell_labels.get(key, 0)
                     for key in set(cell_labels_all) | set(cell_labels)
@@ -273,47 +267,3 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         
         df[f'tissue_{self.method_key}'] = pd.Categorical(df[f'tissue_{self.method_key}'].fillna('unknown'))
         return df[f'tissue_{self.method_key}']
-        
-     # def community_calling_multiple_window_sizes_per_window(self):
-    #     x_min = self.adata.obs['Centroid_X'].min()
-    #     y_min = self.adata.obs['Centroid_Y'].min()
-
-    #     for win_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
-    #         bin_slide_ratio = int(win_size/sliding_step)
-
-    #         # max voting on cluster labels, take only current window size
-    #         subwindow_locations = np.unique(self.adata.obs[f'window_spatial_{str(win_size)}'])
-    #         # variable for final subwindow labels
-    #         leiden_max_vote = pd.Series(index=subwindow_locations, name='leiden_max_vote', dtype=np.float64)
-    #         for location in subwindow_locations:
-    #             # extract x,y,z coordinates from location string
-    #             x_curr, y_curr, z_curr, w_size = np.array(location.split("_")).astype(int)
-    #             # index of subwindow is in the top left corner of the whole window
-    #             subwindow_labels = {}
-    #             for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
-    #                 for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
-    #                     # check if location exist (spatial area is not complete)
-    #                     if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{w_size}') in self.tissue.obs.index:
-    #                         new_value = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{w_size}', 'leiden']
-    #                         subwindow_labels[new_value] = subwindow_labels[new_value] + 1 if new_value in subwindow_labels.keys() else 1
-                
-    #             # MAX VOTE PER WINDOW SIZE
-    #             # max vote is saved in a new variable (not changed in tissue.obs) so that it does not have diagonal effect on other labels during refinement
-    #             # max_voting result is created for each subwindow, while the 'leiden' clustering was defined for each window
-    #             leiden_max_vote.loc[location] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else np.nan
-
-    #         # copy clustering results from subwindows to cells of those subwindows in adata object
-    #         self.adata.obs.loc[:, f'tissue_{self.method_key}_{str(win_size)}'] = list(leiden_max_vote.loc[self.adata.obs[f'window_spatial_{str(win_size)}']])
-
-    #         logging.info(f'Sliding window cell mixture calculation done for window size = {str(win_size)}. Added results to adata.obs["tissue_{self.method_key}_{str(win_size)}"]')
-        
-        # perform final max - label with most appearances in all window sizes will be chosen
-        # leiden_final_max_vote = pd.Series(index=self.adata.obs.index, name='leiden_final_max_vote', dtype=np.int32)
-        # cols = [col for col in self.adata.obs.columns if f"tissue_{self.method_key}" in col]
-        # df_voting = self.adata.obs.loc[:, [col for col in self.adata.obs.columns if f"tissue_{self.method_key}" in col]]
-        # df_voting[f'tissue_{self.method_key}'] = df_voting.apply(lambda row : Counter(list(row)).most_common(1)[0][0], axis=1)
-        # self.adata.obs.loc[:, f'tissue_{self.method_key}'] = df_voting[f'tissue_{self.method_key}']
-        # self.adata.obs = self.adata.obs.drop(columns=cols, axis=1)
-
-    #     logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
-
