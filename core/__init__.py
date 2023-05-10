@@ -8,3 +8,9 @@ try:
     from .sliding_window import SlidingWindow
 except ImportError:
     logging.warn("Module SlidingWindow is not present.")
+
+
+try:
+    from .sliding_window import SlidingWindowMultipleSizes
+except ImportError:
+    logging.warn("Module SlidingWindowMultipleSizes is not present.")

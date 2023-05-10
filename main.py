@@ -23,18 +23,17 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', help='Show logging messages. 0 - Show warrnings, >0 show info, <0 no output generated.', type=int, default=0)
     parser.add_argument('-p', '--plotting', help='Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - save all plots (cell type images, statisctics and cell mixture plots)', type=int, required=False, default=2)
     parser.add_argument('--skip_stats', help='Skip statistics calculation on cell community clustering result. A table of cell mixtures and comparative spatial plots of cell types and mixtures will not be created.', type=bool, required=False, default=False)
-    parser.add_argument('--total_cell_norm', help='Total number of cells per window mixture after normalization', type=int,required=False, default=10000)
-    parser.add_argument('--downsample_rate', help='Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics', type=int,required=False, default=80)
+    parser.add_argument('--total_cell_norm', help='Total number of cells per window mixture after normalization', type=int, required=False, default=10000)
+    parser.add_argument('--downsample_rate', help='Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics', type=int, required=False, default=80)
+    parser.add_argument('--num_threads', help='Number of threads that will be used to speed up community calling', type=int, required=False, default=5)
     parser.add_argument('--entropy_thres', help='Threshold value for spatial cell type entropy for filtering out overdispersed cell types', type=float, required=False, default=1.0)
     parser.add_argument('--scatter_thres', help='Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types', type=float, required=False, default=1.0)
-    parser.add_argument('-w', '--win_size', help='Window size for anlyzing the cell community', type=int,required=False, default=150)
-    parser.add_argument('--sliding_step', help='Slide step for sliding window method', type=int, required=False, default=50)
+    parser.add_argument('-w', '--win_sizes', help='Comma separated list of window sizes for analyzing the cell community', type=str, required=False, default='150')
+    parser.add_argument('--sliding_steps', help='Comma separated list of sliding steps for sliding window', type=str, required=False, default='50')
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
     parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
     parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
-
-
 
     args = parser.parse_args()
 
@@ -56,7 +55,7 @@ if __name__ == '__main__':
         "The requested methods could not be executed because your environment lacks needed libraries."
     all_methods = {}  # Only one method for now
     if 'sliding_window' in chosen_methods:
-        all_methods['sliding_window'] = SlidingWindow
+        all_methods['sliding_window'] = SlidingWindowMultipleSizes
 
     # Process requested methods
     for method in all_methods:
