@@ -19,27 +19,27 @@ class SlidingWindow(CommunityClusteringAlgo):
         super().__init__(adata, slice_id, input_file_path,  **params)
         self.win_sizes_list = [int(w) for w in self.win_sizes.split(',')]
         self.sliding_steps_list = [int(s) for s in self.sliding_steps.split(',')]
-        assert len(self.win_sizes_list) == len(self.sliding_steps_list), "The number of sliding steps must be equal to the number of window sizes."
+        assert len(self.win_sizes_list) == len(self.sliding_steps_list), \
+            "The number of sliding steps must be equal to the number of window sizes."
         win_sizes = "_".join([str(i) for i in self.win_sizes_list])
         self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{win_sizes}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc{self.min_cells_coeff}"
         self.filename = self.adata.uns['sample_name'] + self.params_suffix
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
         # create results folder
-        if (not os.path.exists(self.dir_path)):
+        if not os.path.exists(self.dir_path):
             os.mkdir(self.dir_path)
 
         self.method_key = 'sliding_window'
     
     @timeit
     def run(self):
-        if self.tfile==None:
+        if not self.tfile:
             self.calc_feature_matrix(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
             if self.tfile.endswith('.h5ad'):
                 self.tissue = sc.read(self.tfile)
             else:
                 raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
-
 
     def calc_feature_matrix(self, win_size, sliding_step):
         # window size needs to be a multiple of sliding step
@@ -49,8 +49,8 @@ class SlidingWindow(CommunityClusteringAlgo):
         # create centroids for each sliding step of windows
         # .obs data is assigned as pd.Series since sometimes the new column added to .obs Dataframe can have 'nan' values
         # if the index of data doesn't match the index of .obs
-        self.adata.obs['Centroid_X'] = pd.Series(((self.adata.obsm['spatial'][:,0])/sliding_step).astype(int), index=self.adata.obs_names)
-        self.adata.obs['Centroid_Y'] = pd.Series(((self.adata.obsm['spatial'][:,1])/sliding_step).astype(int), index=self.adata.obs_names)
+        self.adata.obs['Centroid_X'] = pd.Series(((self.adata.obsm['spatial'][:, 0])/sliding_step).astype(int), index=self.adata.obs_names)
+        self.adata.obs['Centroid_Y'] = pd.Series(((self.adata.obsm['spatial'][:, 1])/sliding_step).astype(int), index=self.adata.obs_names)
         # need to understand borders and padding
         # subwindows belonging to borders will not have a complete cell count
         x_max = self.adata.obs['Centroid_X'].max()
@@ -150,7 +150,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
     def run(self):
         tissue_list = []
 
-        if self.tfile==None:
+        if not self.tfile:
             n = len(self.win_sizes_list)
             for i in range(n):
                 super().calc_feature_matrix(self.win_sizes_list[i], self.sliding_steps_list[i])
@@ -158,11 +158,8 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             
             self.tissue = ad.concat(tissue_list, axis=0, join='outer')
         else:
-            if self.tfile.endswith('.h5ad'):
-                self.tissue = sc.read(self.tfile)
-            else:
-                raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
-    
+            super().run()
+
     def community_calling(self):
         if len(self.win_sizes_list) == 1 and len(self.sliding_steps_list) == 1:
             super().community_calling(self.win_sizes_list[0], self.sliding_steps_list[0])
@@ -220,7 +217,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
         and then perform majority voting to get the final label.
         Cells are split into as many batches as there are available cpus and processed in parallel.
         """
-        #if cell batches are too small, caching is not efficient so we want at least 5000 cells per batch
+        # if cell batches are too small, caching is not efficient so we want at least 5000 cells per batch
         num_cpus_used = mp.cpu_count() if mp.cpu_count() < self.num_threads else self.num_threads
 
         with mp.Pool(processes=num_cpus_used) as pool:
@@ -228,7 +225,6 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             partial_results = [result for result in pool.map(self.community_calling_partial, split_df)]
         
         self.adata.obs[f'tissue_{self.method_key}'] = pd.concat(partial_results)
-
 
     def community_calling_partial(self, df):
         x_min = self.adata.obs['Centroid_X'].min()

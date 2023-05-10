@@ -13,6 +13,8 @@ from .utils import timeit
 
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
+        sc.settings.verbosity = 3 if params['verbose'] else params['verbose']
+        sc.settings.set_figure_params(dpi=300, facecolor='white')
         self.adata = adata
         self.slice_id = slice_id
         self.adata.uns['algo_params'] = params
@@ -54,9 +56,7 @@ class CommunityClusteringAlgo(ABC):
         return self.tissue
     
     def set_clustering_labels(self, labels):
-        # to prevent warning about appending data to a view of obs
-        self.tissue.obs = self.tissue.obs.copy()
-        self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)
+        self.tissue.obs.loc[:, 'leiden'] = labels
 
     def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
@@ -177,7 +177,6 @@ class CommunityClusteringAlgo(ABC):
 
     def save_metrics(self):
         # save metrics results in csv format
-        # print(self.tissue.var[['entropy', 'scatteredness']])
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
 
     def save_tissue(self, suffix=''):
