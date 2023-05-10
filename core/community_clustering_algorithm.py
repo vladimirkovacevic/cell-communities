@@ -176,9 +176,11 @@ class CommunityClusteringAlgo(ABC):
                 fig.subplots_adjust(wspace=0.35)
 
                 sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
-                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]})' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
+                ax[0].set_title(f'cell types')
+                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
-                ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]})' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
+                ax[1].set_title(f'cell community')
+                ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
 
                 plt.close()
@@ -244,24 +246,21 @@ class CommunityClusteringAlgo(ABC):
                 # init image
                 mixture_image = np.zeros(shape=(cy_max, cx_max, 3), dtype=np.float32)
 
-
-                # make background white by setting value plane to 1.0
-                # window data will overwrite it in cluster specifc positions
-                mixture_image[:,:,2] =1.0
-            
                 for window in data_df.iterrows():
                     wx = int(window[0].split("_")[0])
                     wy = int(window[0].split("_")[1])
                     mixture_image[int(wy*self.sliding_step) : int(wy*self.sliding_step + self.win_size), int(wx*self.sliding_step) : int(wx*self.sliding_step + self.win_size), :] = 1-window[1].values.astype(np.float32)
                 
-                if color_system == 'hsv':
-                    # convert DataFrame to HSV image
-                    rgb_image = color.hsv2rgb(mixture_image)
+                # convert DataFrame to HSV image
+                rgb_image = color.hsv2rgb(mixture_image)
 
                 # plot the HSV image
                 fig, ax = plt.subplots(nrows=1, ncols=1)
-                g = plt.imshow(rgb_image)
-                g = sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette='Greys', spot_size=self.spot_size, show=False, frameon=False)
+                plt.scatter(x = self.adata.obsm['spatial'][:,1], y=self.adata.obsm['spatial'][:,0], c='#BFBFBF', marker='.', s=0.5, zorder=1)
+                window_mask = rgb_image[:,:,0] != 0
+                window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
+                rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
+                plt.imshow(rgba_image, zorder=2)
                 plt.axis('off')
                 ax.grid(visible=False)
                 ax.set_title(f'{color_system} of mixutre {cluster[0]} - top 3 cell types\n({self.adata.uns["sample_name"]})')
