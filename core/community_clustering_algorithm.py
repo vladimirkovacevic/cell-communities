@@ -27,7 +27,7 @@ class CommunityClusteringAlgo(ABC):
 
         cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
         cell_over_limit = []
-        for cell_tp in adata.obs[self.annotation].cat.categories:
+        for cell_tp in self.adata.obs[self.annotation].cat.categories:
             cell_num = sum(self.adata.obs[self.annotation]==cell_tp)
             if cell_num > cell_count_limit:
                 cell_over_limit.append(cell_tp)
