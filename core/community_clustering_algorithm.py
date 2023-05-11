@@ -32,7 +32,7 @@ class CommunityClusteringAlgo(ABC):
             if cell_num > cell_count_limit:
                 cell_over_limit.append(cell_tp)
             else:
-                logging.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type.')
+                logging.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type: {cell_num} cells < {int(cell_count_limit)} ({self.min_count_per_type} % of {len(self.adata.obs[self.annotation])})')
         
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
 
