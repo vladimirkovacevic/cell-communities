@@ -13,6 +13,8 @@ from .utils import timeit
 
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
+        sc.settings.verbosity = 3 if params['verbose'] else params['verbose']
+        sc.settings.set_figure_params(dpi=300, facecolor='white')
         self.adata = adata
         self.slice_id = slice_id
         self.adata.uns['algo_params'] = params
@@ -22,21 +24,17 @@ class CommunityClusteringAlgo(ABC):
 
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
         self.tissue = None
-        # [NOTE] this should be included later
-        # # define if each cell type needs a minimum amount of cells to be considered in cell mixtures and what is the minimum value
-        # min_count_per_type_limit = False
-        # min_count_per_type = 100
 
-        # # define if only cell types with more than min_count_per_type cells are used for cell communities extraction
-        # if min_count_per_type_limit:
-
-        #     cell_over_limit = []
-        #     for cell_tp in adata.obs[annotation_label].cat.categories:
-        #         cell_num = sum(adata.obs[annotation_label]==cell_tp)
-        #         if cell_num > min_count_per_type:
-        #             cell_over_limit.append(cell_tp)
-
-        #     adata = adata[adata.obs[annotation_label].isin(cell_over_limit),:]
+        cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
+        cell_over_limit = []
+        for cell_tp in self.adata.obs[self.annotation].cat.categories:
+            cell_num = sum(self.adata.obs[self.annotation]==cell_tp)
+            if cell_num > cell_count_limit:
+                cell_over_limit.append(cell_tp)
+            else:
+                logging.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type: {cell_num} cells < {int(cell_count_limit)} ({self.min_count_per_type} % of {len(self.adata)})')
+        
+        self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
 
     @abstractmethod
     def run(self):
@@ -54,9 +52,7 @@ class CommunityClusteringAlgo(ABC):
         return self.tissue
     
     def set_clustering_labels(self, labels):
-        # to prevent warning about appending data to a view of obs
-        self.tissue.obs = self.tissue.obs.copy()
-        self.tissue.obs['leiden'] = pd.Series(labels, index=self.tissue.obs.index)
+        self.tissue.obs.loc[:, 'leiden'] = labels
 
     def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
@@ -177,7 +173,6 @@ class CommunityClusteringAlgo(ABC):
 
     def save_metrics(self):
         # save metrics results in csv format
-        # print(self.tissue.var[['entropy', 'scatteredness']])
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
 
     def save_tissue(self, suffix=''):
