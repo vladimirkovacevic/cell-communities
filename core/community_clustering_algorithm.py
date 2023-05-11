@@ -24,21 +24,15 @@ class CommunityClusteringAlgo(ABC):
 
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
         self.tissue = None
-        # [NOTE] this should be included later
-        # # define if each cell type needs a minimum amount of cells to be considered in cell mixtures and what is the minimum value
-        # min_count_per_type_limit = False
-        # min_count_per_type = 100
 
-        # # define if only cell types with more than min_count_per_type cells are used for cell communities extraction
-        # if min_count_per_type_limit:
-
-        #     cell_over_limit = []
-        #     for cell_tp in adata.obs[annotation_label].cat.categories:
-        #         cell_num = sum(adata.obs[annotation_label]==cell_tp)
-        #         if cell_num > min_count_per_type:
-        #             cell_over_limit.append(cell_tp)
-
-        #     adata = adata[adata.obs[annotation_label].isin(cell_over_limit),:]
+        cell_count_limit = (self.min_count_per_type_permille*len(self.adata.obs[self.annotation])) // 1000
+        cell_over_limit = []
+        for cell_tp in adata.obs[self.annotation].cat.categories:
+            cell_num = sum(self.adata.obs[self.annotation]==cell_tp)
+            if cell_num > cell_count_limit:
+                cell_over_limit.append(cell_tp)
+        
+        self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
 
     @abstractmethod
     def run(self):

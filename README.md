@@ -52,6 +52,7 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 - `--min_perc_to_show`: Minimum percentage of a cell type within a cluster for the cell type to be plotted in the plot_stats() function. Default value is `5`.
 - `--min_cells_coeff`: Multiple of standard deviations from mean values that determines the cutoff for a certain value. Default value is `1.5`.
 - `--save_adata`: Save Anndata file with resulting .obs column of cell community labels. Default value is False.
+- `--min_count_per_type_permille`: Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in permilles). Default is `1` permille.
 ## Examples
 
 ```css
