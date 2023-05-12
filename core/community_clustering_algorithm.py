@@ -165,8 +165,10 @@ class CommunityClusteringAlgo(ABC):
         plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), dpi=400)
         plt.close()
 
+    def plot_cluster_mixtures(self):
         # plot each cluster and its cells mixture
         sc.settings.set_figure_params(dpi=100, facecolor='white')
+        stats = self.tissue.uns['cell mixtures stats']
 
         new_stats = stats.copy()
         new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)

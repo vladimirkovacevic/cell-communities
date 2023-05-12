@@ -128,6 +128,7 @@ if __name__ == '__main__':
             if args.plotting > 1:
                 algo.plot_stats()
             if args.plotting > 2:
+                algo.plot_cluster_mixtures()
                 algo.boxplot_stats()
                 algo.colorplot_stats(color_system=args.color_plot_system)
             # save final tissue with stats
