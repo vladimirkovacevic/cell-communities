@@ -92,7 +92,13 @@ class CommunityClusteringAlgo(ABC):
 
     def calculate_spatial_cell_type_metrics(self):
         pass
-    
+    ## CALCULATE_CELL_MIXTURE_STATS
+    # brief - Creates a pandas DataFrame of cell type percentages per class
+    # percentages are calculated globaly for all cells with single class label.
+    # This is saved in adata.uns['cell mixtures'] for further use by plot fn.
+    # Columns of total cell count per class and percentage of tissue per cluster
+    # are added. Row of total cell type count is added.
+    # DataFrame with additional columns and row is saved in adata.uns['cell mixture stats']
     def calculate_cell_mixture_stats(self):
 
         # extract information on leiden clustering labels and cell types to create cell communities statistics
@@ -110,28 +116,30 @@ class CommunityClusteringAlgo(ABC):
 
             stats_table[label] = {k:cell_type_dict[k] for k in cell_type_dict}
 
-            stats_table[label]['total_counts'] = int(sum(cell_type_dict.values()))
-
         stats = pd.DataFrame(stats_table).T
         stats.columns.name = "cell types"
 
-        # add final row with total counts per cell types
-        cell_type_counts = {ct:[int(sum(stats[ct].values))] for ct in self.tissue.var.index}
+        # save absolute cell mixtures to tissue
+        self.tissue.uns['cell mixtures'] = stats.iloc[:,:]
+
+        # add column with total cell count per cluster
+        stats['total_counts'] = np.array([sum(stats.loc[row, :]) for row in stats.index]).astype(int)
+
+        # add row with total counts per cell types
+        cell_type_counts = {ct:[int(sum(stats[ct]))] for ct in self.tissue.var.index}
         stats = pd.concat([stats, pd.DataFrame(cell_type_counts, index=['total_cells'])])
 
-        # divide each row with total sum of cells per cluster
-        for i in range(len(stats.index.values[:-1])):
-            if stats.iloc[i,-1] > 0:
-                stats.iloc[i, :-1] = (100 * stats.iloc[i, :-1] / stats.iloc[i, -1]).astype(int)
+        # divide each row with total sum of cells per cluster and mul by 100 to get percentages
+        stats.iloc[:-1, :-1] = stats.iloc[:-1, :-1].div(stats['total_counts'][:-1], axis=0).mul(100).astype(int)
 
         # add column with percentage of all cells belonging to a cluster
         stats['perc_of_all_cells'] = np.around(stats['total_counts'] / stats['total_counts'].sum() * 100, decimals=1)
 
         # save cell mixture statistics to tissue
-        self.tissue.uns['cell mixtures'] = stats.iloc[:, :]
+        self.tissue.uns['cell mixtures stats'] = stats.iloc[:, :]
 
     def plot_stats(self):
-        stats = self.tissue.uns['cell mixtures']
+        stats = self.tissue.uns['cell mixtures stats']
         sc.settings.set_figure_params(dpi=400, facecolor='white')
         sns.set(font_scale=0.5)
 
@@ -182,7 +190,7 @@ class CommunityClusteringAlgo(ABC):
                 plt.close()
 
     def boxplot_stats(self):
-        stats = self.tissue.uns['cell mixtures']
+        stats = self.tissue.uns['cell mixtures stats']
         
         # box plot per cluster of cell type percentages distribution
         sc.settings.set_figure_params(dpi=100, facecolor='white')
@@ -192,7 +200,6 @@ class CommunityClusteringAlgo(ABC):
         new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
         new_stats = new_stats.drop(labels='total_cells', axis=0)
         for cluster in new_stats.iterrows():
-
 
             win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster[0]] # this is going to be more noisy because
             # the feature vector contains the cell mixture of the window which top left corner is in this subwindow
@@ -222,7 +229,7 @@ class CommunityClusteringAlgo(ABC):
     def colorplot_stats(self, color_system='hsv'):
         supported_color_systems = ['hsv', 'rgb']
         if color_system in supported_color_systems:
-            stats = self.tissue.uns['cell mixtures']
+            stats = self.tissue.uns['cell mixtures stats']
 
             cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
             cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
