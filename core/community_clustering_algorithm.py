@@ -26,10 +26,6 @@ class CommunityClusteringAlgo(ABC):
             setattr(self, key, value)
 
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
-        # self.cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
-        # self.cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
-        # self.cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
-        # self.cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
         self.tissue = None
 
         cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
@@ -253,20 +249,20 @@ class CommunityClusteringAlgo(ABC):
                 for window in data_df.iterrows():
                     wx = int(window[0].split("_")[0])
                     wy = int(window[0].split("_")[1])
-                    mixture_image[int(wy*self.sliding_step-cy_min) : int(wy*self.sliding_step + self.win_size-cy_min), int(wx*self.sliding_step-cx_min) : int(wx*self.sliding_step + self.win_size-cx_min), :] = window[1].values.astype(np.float32)
+                    mixture_image[int(wy*self.sliding_step-cy_min) : int(wy*self.sliding_step + self.win_size-cy_min), int(wx*self.sliding_step-cx_min) : int(wx*self.sliding_step + self.win_size-cx_min), :] = 1 - window[1].values.astype(np.float32)
                 
                 # convert image of selected color representation to rgb
                 if color_system == 'hsv':
                     # if hsv display the 1 - percentage since the colors will be too dark
-                    rgb_image = color.hsv2rgb(1-mixture_image)
+                    rgb_image = color.hsv2rgb(mixture_image)
                 elif color_system == 'rgb':
                     rgb_image = mixture_image
                 # plot the colored window image of the cell scatterplot
                 fig, ax = plt.subplots(nrows=1, ncols=1)
                 # cell scatterplot for visual spatial reference
-                plt.scatter(x = self.adata.obsm['spatial'][:,1]-cy_min, y=self.adata.obsm['spatial'][:,0]-cx_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
+                plt.scatter(x = self.adata.obsm['spatial'][:,0]-cx_min, y=self.adata.obsm['spatial'][:,1]-cy_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
                 # mask of window positions
-                window_mask = rgb_image[:,:,0] != 0
+                window_mask = rgb_image[:,:,1] != 0
                 # mask adjusted to alpha channel and added to rgb image
                 window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
                 rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
@@ -279,7 +275,7 @@ class CommunityClusteringAlgo(ABC):
                 if color_system == 'hsv':
                     plane_names = ['(1-H)', '(1-S)', '(1-V)']
                 elif color_system == 'rgb':
-                    plane_names = ['R', 'G', 'B']
+                    plane_names = ['1-R', '1-G', '1-B']
                 
                 ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
                             transform=ax.transAxes, fontsize=12, va='center', ha='left')
