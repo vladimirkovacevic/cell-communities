@@ -207,7 +207,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else np.nan
             self.adata.obs.loc[index, f'tissue_{self.method_key}'] = max_vote_label
         
-        self.adata.obs[f'tissue_{self.method_key}'] = pd.Categorical(self.adata.obs[f'tissue_{self.method_key}'].fillna('unknown'))
+        self.adata.obs[f'tissue_{self.method_key}'] = pd.Categorical(self.adata.obs[f'tissue_{self.method_key}'].fillna('nan'))
 
     @timeit
     def community_calling_multiple_window_sizes_per_cell_multiprocessing(self):
@@ -222,14 +222,14 @@ class SlidingWindowMultipleSizes(SlidingWindow):
 
         with mp.Pool(processes=num_cpus_used) as pool:
             split_df = np.array_split(self.adata.obs, num_cpus_used)
-            partial_results = [result for result in pool.map(self.community_calling_partial, split_df)]
+            partial_results = pool.map(self.community_calling_partial, split_df)
         
-        self.adata.obs[f'tissue_{self.method_key}'] = pd.concat(partial_results)
+        self.adata.obs[f'tissue_{self.method_key}'] = pd.Categorical(pd.concat(partial_results))
 
     def community_calling_partial(self, df):
         x_min = self.adata.obs['Centroid_X'].min()
         y_min = self.adata.obs['Centroid_Y'].min()
-        df[f'tissue_{self.method_key}'] = pd.Series(index=self.adata.obs.index, dtype=str)
+        result = pd.Series(index=df.index, dtype=str)
         cache = {}
 
         for index, cell in tqdm(df.iterrows(), desc="Per cell computation in a subset of all cells... ", total=df.shape[0]):
@@ -243,7 +243,6 @@ class SlidingWindowMultipleSizes(SlidingWindow):
 
                 if (x_curr, y_curr, z_curr, w_size) in cache:
                     cell_labels = cache[(x_curr, y_curr, z_curr, w_size)]
-                    continue
                 else:
                     # index of cell is in the top left corner of the whole window
                     for slide_x in range(0, np.min([bin_slide_ratio, x_curr - x_min + 1])):
@@ -259,7 +258,6 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                     for key in set(cell_labels_all) | set(cell_labels)
                 }
             max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else np.nan
-            df.loc[index, f'tissue_{self.method_key}'] = max_vote_label
+            result[index] = max_vote_label
         
-        df[f'tissue_{self.method_key}'] = pd.Categorical(df[f'tissue_{self.method_key}'].fillna('unknown'))
-        return df[f'tissue_{self.method_key}']
+        return result.fillna('nan')
