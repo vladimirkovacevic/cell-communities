@@ -15,6 +15,16 @@ from matplotlib import pyplot as plt
 
 from .utils import timeit
 
+cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c564b", \
+                  "#e377c2", "#b5bd61", "#17becf", "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", \
+                  "#c5b0d5", "#c49c94", "#f7b6d2", "#dbdb8d", "#9edae5", "#ad494a", "#8c6d31", \
+                  "#b4d2b1", "#568f8b", "#1d4a60", "#cd7e59", "#ddb247", "#d15252", \
+                  "#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#ef476f", \
+                  "#ffd166","#06d6a0","#118ab2","#073b4c", "#fbf8cc","#fde4cf", \
+                  "#ffcfd2","#f1c0e8","#cfbaf0","#a3c4f3","#90dbf4","#8eecf5", \
+                  "#98f5e1","#b9fbc0", "#0a0908","#22333b","#f2f4f3","#a9927d","#5e503f",\
+                  "#10002b","#240046","#3c096c","#5a189a","#7b2cbf","#9d4edd","#c77dff","#e0aaff"]
+
 
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
@@ -27,6 +37,7 @@ class CommunityClusteringAlgo(ABC):
         for key, value in params.items():
             setattr(self, key, value)
 
+        self.annotation_palette = list(self.adata.uns[f'{self.annotation}_colors']) if f'{self.annotation}_colors' in self.adata.uns else None
         self.tissue = None
 
         cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
@@ -61,7 +72,7 @@ class CommunityClusteringAlgo(ABC):
 
     def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        sc.pl.spatial(self.adata, color=[self.annotation], palette=None, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
+        sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -88,7 +99,7 @@ class CommunityClusteringAlgo(ABC):
         # # plot clustering after majority voting for each subwindow
         # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=None, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
+        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=cluster_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -144,11 +155,11 @@ class CommunityClusteringAlgo(ABC):
 
     def plot_stats(self):
         stats = self.tissue.uns['cell mixtures stats']
-        sc.settings.set_figure_params(dpi=400, facecolor='white')
-        sns.set(font_scale=0.5)
+        sc.settings.set_figure_params(dpi=300, facecolor='white')
+        sns.set(font_scale=1)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
-        fig, axes = plt.subplots(ncols=ncols)
+        fig, axes = plt.subplots(ncols=ncols, figsize=(15,15))
 
         # no space between columns
         fig.subplots_adjust(wspace=0)
@@ -169,7 +180,7 @@ class CommunityClusteringAlgo(ABC):
 
     def plot_cluster_mixtures(self):
         # plot each cluster and its cells mixture
-        sc.settings.set_figure_params(dpi=100, facecolor='white')
+        sc.settings.set_figure_params(dpi=200, facecolor='white')
         stats = self.tissue.uns['cell mixtures stats']
 
         new_stats = stats.copy()
@@ -186,10 +197,11 @@ class CommunityClusteringAlgo(ABC):
                 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
                 fig.subplots_adjust(wspace=0.35)
 
-                sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
+                sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, palette=self.annotation_palette, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
                 ax[0].set_title(f'cell types')
                 ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
-                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
+                
+                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette=cluster_palette, spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
                 ax[1].set_title(f'cell community')
                 ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
@@ -217,7 +229,7 @@ class CommunityClusteringAlgo(ABC):
                 
                 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15,6))
                 # plot boxplot of cell type percentages per mixture
-                ax = sns.boxplot(x='Cell Type', y='Percentage', data=cell_type_distrib)
+                ax = sns.boxplot(x='Cell Type', y='Percentage', data=cell_type_distrib, palette=self.annotation_palette)
                 if stripplot:
                     # overlap with a plot of specific percentage values. 
                     # Jitter allows dots to move left and right for better visibility of all points
@@ -303,7 +315,7 @@ class CommunityClusteringAlgo(ABC):
 
     def plot_celltype_table(self):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
-        sns.set(font_scale=0.5)
+        sns.set(font_scale=1)
 
         stats = self.tissue.uns['cell mixtures']
 
@@ -329,19 +341,15 @@ class CommunityClusteringAlgo(ABC):
 
         ncols = len(stats)
         # table will have a clumn for each cluster and first column for cell types
-        fig, axes = plt.subplots(nrows=1, ncols=ncols+1)
+        fig, axes = plt.subplots(nrows=1, ncols=ncols+1, figsize=(15,15))
         # no space between columns
         fig.subplots_adjust(wspace=0, hspace=0)
 
-        # create a list of colors to use as the row background
-        scplspatial_colors = matplotlib.rcParams["axes.prop_cycle"].by_key()['color']
-
         # create a dictionary mapping each cluster to its corresponding color
-        cluster_color = dict(zip(stats.columns, [scplspatial_colors[int(x)] for x in stats.index.values]))
+        cluster_color = dict(zip(stats.columns, cluster_palette))
 
-        # cell type colors from adata.uns['annotation_colors']
-        cell_type_colors = [self.adata.uns[f'{self.annotation}_colors'][np.unique(self.adata.obs[self.annotation])==ct][0] for ct in stats.columns]
-        cmap = mcolors.ListedColormap([mcolors.hex2color(hexc) for hexc in cell_type_colors])
+        # cell type colors from adata.uns['annotation_colors'] if exists
+        cmap = mcolors.ListedColormap([mcolors.hex2color(hexc) for hexc in self.annotation_palette]) if self.annotation_palette!=None else None
 
         for i, ax in enumerate(axes):
             if i == 0:
