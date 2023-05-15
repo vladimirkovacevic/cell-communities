@@ -122,7 +122,7 @@ class CommunityClusteringAlgo(ABC):
         stats.columns.name = "cell types"
 
         # save absolute cell mixtures to tissue
-        self.tissue.uns['cell mixtures'] = stats.iloc[:,:]
+        self.tissue.uns['cell mixtures'] = stats.iloc[:,:].copy()
 
         # add column with total cell count per cluster
         stats['total_counts'] = np.array([sum(stats.loc[row, :]) for row in stats.index]).astype(int)
@@ -174,9 +174,10 @@ class CommunityClusteringAlgo(ABC):
         new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
         new_stats = new_stats.drop(labels='total_cells', axis=0)
         for cluster in new_stats.iterrows():
-            ct_perc = cluster[1].sort_values(ascending=False)
             # only display clusters with more than min_cells_in_cluster cells
             if stats.loc[cluster[0]]['total_counts'] > self.min_cluster_size:
+                # sort cell types by their abundnce in the cluster
+                ct_perc = cluster[1].sort_values(ascending=False)
                 # only cell types which have more than min_perc_to_show abundance will be shown
                 ct_ind = [x for x in ct_perc.index[ct_perc>self.min_perc_to_show]]
                 
@@ -193,23 +194,19 @@ class CommunityClusteringAlgo(ABC):
 
                 plt.close()
 
-    def boxplot_stats(self):
-        stats = self.tissue.uns['cell mixtures stats']
-        
+    def boxplot_stats(self, stripplot=False):
         # box plot per cluster of cell type percentages distribution
         sc.settings.set_figure_params(dpi=100, facecolor='white')
 
-        # drop total_counts, perc_of_all_cells columns and total_cells row
-        new_stats = stats.copy()
-        new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
-        new_stats = new_stats.drop(labels='total_cells', axis=0)
-        for cluster in new_stats.iterrows():
+        cluster_list = np.unique(self.tissue.obs['leiden'])
+        
+        for cluster in cluster_list:
             # for each window size a box plot is provided per cluster
-            cl_win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster[0]]
+            cl_win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster]
             for window_size in self.win_sizes_list:
                 # extract only windows of specific size
                 win_cell_distrib = cl_win_cell_distrib[cl_win_cell_distrib.obsm['spatial'][:,3] == window_size]
-                
+                # a DataFrame with cell percentages instead of normalized cel number is created
                 win_cell_distrib_df = pd.DataFrame(win_cell_distrib.X / (self.total_cell_norm/100), columns=win_cell_distrib.var.index)
 
                 # Reshape data into long format
@@ -219,32 +216,32 @@ class CommunityClusteringAlgo(ABC):
                 fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15,6))
                 # plot boxplot of cell type percentages per mixture
                 ax = sns.boxplot(x='Cell Type', y='Percentage', data=cell_type_distrib)
-                # overlap with a plot of specific percentage values. 
-                # Jitter allows dots to move left and right for better visibility of all points
-                ax = sns.stripplot(x='Cell Type', y='Percentage', data=cell_type_distrib, jitter=True, color='black', size=2)
+                if stripplot:
+                    # overlap with a plot of specific percentage values. 
+                    # Jitter allows dots to move left and right for better visibility of all points
+                    ax = sns.stripplot(x='Cell Type', y='Percentage', data=cell_type_distrib, jitter=True, color='black', size=2)
                 # remove top and right frame of the plot
                 sns.despine(top=True, right=True)
-                ax.set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
+                ax.set_title(f'Cell community {cluster} ({self.adata.uns["sample_name"]})')
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
                 ax.xaxis.tick_bottom() # x axis on the bottom
-                fig.savefig(os.path.join(self.dir_path, f'boxplot_c{cluster[0]}_ws{window_size}.png'), bbox_inches='tight')
+                fig.savefig(os.path.join(self.dir_path, f'boxplot_c{cluster}_ws{window_size}.png'), bbox_inches='tight')
 
                 plt.close()
 
     def colorplot_stats(self, color_system='hsv'):
         supported_color_systems = ['hsv', 'rgb']
         if color_system in supported_color_systems:
-            stats = self.tissue.uns['cell mixtures stats']
+            stats = self.tissue.uns['cell mixtures']
+            # divide each row with total sum of cells per cluster and mul by 100 to get percentages
+            stats.iloc[:, :] = stats.iloc[:, :].div(np.array([sum(stats.loc[row, :]) for row in stats.index]), axis=0).mul(100).astype(int)
 
             cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
             cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
             cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
             cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
 
-            new_stats = stats.copy()
-            new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
-            new_stats = new_stats.drop(labels='total_cells', axis=0)
-            for cluster in new_stats.iterrows():
+            for cluster in stats.iterrows():
                 ct_perc = cluster[1].sort_values(ascending=False)
                 top_three_ct = ct_perc.index.values[0:3]
 
