@@ -30,6 +30,8 @@ if __name__ == '__main__':
     parser.add_argument('--sliding_steps', help='Comma separated list of sliding steps for sliding window', type=str, required=False, default='50')
     parser.add_argument('--min_cluster_size', help='Minumum number of cell for cluster to be plotted in plot_stats()', type=int, required=False, default=500)
     parser.add_argument('--min_perc_to_show', help='Minumum percentage of cell type in cluster for cell type to be plotted in plot_stats()', type=int, required=False, default=5)
+    parser.add_argument('--min_num_celltype', help='Minimum number of cell types that have more than --min_perc_celltype in a cluster, for a cluster to be shown in plot_celltype_table()', type=int, required=False, default=2)
+    parser.add_argument('--min_perc_celltype', help='Minimum percentage of cells of a cell type which at least min_num_celltype cell types need to have to show a cluster in plot_celltype_table()', type=int, required=False, default=15)
     parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
     parser.add_argument('--color_plot_system', help='Color system for display of cluster specific windows.', type=str, required=False, default='hsv', choices={'hsv', 'rgb'})
     parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
@@ -127,6 +129,7 @@ if __name__ == '__main__':
             algo.save_mixture_stats()
             if args.plotting > 1:
                 algo.plot_stats()
+                algo.plot_celltype_table()
             if args.plotting > 2:
                 algo.plot_cluster_mixtures()
                 algo.boxplot_stats()
