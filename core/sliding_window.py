@@ -31,7 +31,6 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         self.method_key = 'sliding_window'
     
-    @timeit
     def run(self):
         if not self.tfile:
             self.calc_feature_matrix(self.win_sizes_list[0], self.sliding_steps_list[0])
@@ -41,6 +40,7 @@ class SlidingWindow(CommunityClusteringAlgo):
             else:
                 raise AttributeError(f"File '{self.tfile}' extension is not .h5ad")
 
+    @timeit
     def calc_feature_matrix(self, win_size, sliding_step):
         # window size needs to be a multiple of sliding step
         sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
@@ -109,6 +109,7 @@ class SlidingWindow(CommunityClusteringAlgo):
     # the one with majority vote. Window cluster labels are in self.tissue_pruned.obs['leiden']
     # and the subwindow labels are placed in self.tissue.obs['leiden_max_vote']
     # self.tissue_pruned is used only for clustering and is discarded
+    @timeit
     def community_calling(self, win_size, sliding_step):
         sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
         
@@ -146,7 +147,7 @@ class SlidingWindow(CommunityClusteringAlgo):
 class SlidingWindowMultipleSizes(SlidingWindow):
     def __init__(self, adata, slice_id, input_file_path, **params):
         super().__init__(adata, slice_id, input_file_path,  **params)
-
+    
     def run(self):
         tissue_list = []
 

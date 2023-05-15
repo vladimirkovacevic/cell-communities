@@ -70,6 +70,7 @@ class CommunityClusteringAlgo(ABC):
     def set_clustering_labels(self, labels):
         self.tissue.obs.loc[:, 'leiden'] = labels
 
+    @timeit
     def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
         sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
@@ -88,6 +89,7 @@ class CommunityClusteringAlgo(ABC):
         self.tissue.raw = self.tissue
         self.tissue = self.tissue[:, var_use]
 
+    @timeit
     def plot_celltype_images(self):
         for cell_t in self.unique_cell_type:
             plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=250)
@@ -112,6 +114,7 @@ class CommunityClusteringAlgo(ABC):
     # Columns of total cell count per class and percentage of tissue per cluster
     # are added. Row of total cell type count is added.
     # DataFrame with additional columns and row is saved in adata.uns['cell mixture stats']
+    @timeit
     def calculate_cell_mixture_stats(self):
 
         # extract information on leiden clustering labels and cell types to create cell communities statistics
@@ -153,6 +156,7 @@ class CommunityClusteringAlgo(ABC):
         # save cell mixture statistics to tissue
         self.tissue.uns['cell mixtures stats'] = stats.iloc[:, :]
 
+    @timeit
     def plot_stats(self):
         stats = self.tissue.uns['cell mixtures stats']
         sc.settings.set_figure_params(dpi=300, facecolor='white')
@@ -178,6 +182,7 @@ class CommunityClusteringAlgo(ABC):
         plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), dpi=400)
         plt.close()
 
+    @timeit
     def plot_cluster_mixtures(self):
         # plot each cluster and its cells mixture
         sc.settings.set_figure_params(dpi=200, facecolor='white')
@@ -208,6 +213,7 @@ class CommunityClusteringAlgo(ABC):
 
                 plt.close()
 
+    @timeit
     def boxplot_stats(self, stripplot=False):
         # box plot per cluster of cell type percentages distribution
         sc.settings.set_figure_params(dpi=100, facecolor='white')
@@ -243,6 +249,7 @@ class CommunityClusteringAlgo(ABC):
 
                 plt.close()
 
+    @timeit
     def colorplot_stats(self, color_system='hsv'):
         supported_color_systems = ['hsv', 'rgb']
         if color_system in supported_color_systems:
@@ -312,7 +319,8 @@ class CommunityClusteringAlgo(ABC):
                     plt.close()
         else:
             logging.warn(f'Unsupported color system: {color_system}.')
-
+            
+    @timeit
     def plot_celltype_table(self):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
         sns.set(font_scale=1)
