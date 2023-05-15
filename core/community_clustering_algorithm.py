@@ -8,6 +8,8 @@ import numpy as np
 import scanpy as sc
 import pandas as pd
 import seaborn as sns
+import matplotlib
+import matplotlib.colors as mcolors
 from matplotlib import pyplot as plt
 
 
@@ -299,7 +301,61 @@ class CommunityClusteringAlgo(ABC):
         else:
             logging.warn(f'Unsupported color system: {color_system}.')
 
-            
+    def plot_celltype_table(self):
+        sc.settings.set_figure_params(dpi=300, facecolor='white')
+        sns.set(font_scale=0.5)
+
+        stats = self.tissue.uns['cell mixtures']
+
+        # calculate percentage of all cells of one cell type belonging to each cluster
+        ct_perc_per_celltype = stats.iloc[:,:].div(np.array([sum(stats.loc[:, col]) for col in stats.columns]), axis=1).mul(100).astype(int)
+        ct_perc_per_cluster = stats.iloc[:,:].div(np.array([sum(stats.loc[row, :]) for row in stats.index]), axis=0).mul(100).astype(int)
+
+        # divide cell numbers with total number of cells per cluster to obtain ct perc per cluster
+        for cluster in stats.iterrows():
+            ct_perc_per_cluster_sorted = ct_perc_per_cluster.loc[cluster[0], :].sort_values(ascending=False)
+            if (ct_perc_per_cluster_sorted[self.min_num_celltype-1] < self.min_perc_celltype) or (sum(stats.loc[cluster[0], :]) < self.min_cluster_size):
+                # remove all clusters that have low number of cells, or high abundance of single cell type
+                stats = stats.drop(labels=cluster[0], axis=0)
+                ct_perc_per_celltype = ct_perc_per_celltype.drop(labels=cluster[0], axis=0)
+                ct_perc_per_cluster = ct_perc_per_cluster.drop(labels=cluster[0], axis=0)
+
+        # remove cell types that are not a significant part of any heterogeneous cluster
+        for celltype in stats.columns:
+            if (max(ct_perc_per_celltype.loc[:, celltype]) < self.min_perc_to_show):
+                stats = stats.drop(labels=celltype, axis=1)
+                ct_perc_per_celltype = ct_perc_per_celltype.drop(labels=celltype, axis=1)
+                ct_perc_per_cluster = ct_perc_per_cluster.drop(labels=celltype, axis=1)
+
+        ncols = len(stats)
+        # table will have a clumn for each cluster and first column for cell types
+        fig, axes = plt.subplots(nrows=1, ncols=ncols+1)
+        # no space between columns
+        fig.subplots_adjust(wspace=0, hspace=0)
+
+        # create a list of colors to use as the row background
+        scplspatial_colors = matplotlib.rcParams["axes.prop_cycle"].by_key()['color']
+
+        # create a dictionary mapping each cluster to its corresponding color
+        cluster_color = dict(zip(stats.columns, [scplspatial_colors[int(x)] for x in stats.index.values]))
+
+        # cell type colors from adata.uns['annotation_colors']
+        cell_type_colors = [self.adata.uns[f'{self.annotation}_colors'][np.unique(self.adata.obs[self.annotation])==ct][0] for ct in stats.columns]
+        cmap = mcolors.ListedColormap([mcolors.hex2color(hexc) for hexc in cell_type_colors])
+
+        for i, ax in enumerate(axes):
+            if i == 0:
+                g = sns.heatmap(np.array(range(len(stats.columns)))[:,np.newaxis], linewidths=0.5, linecolor='gray', \
+                                annot=np.array([column for column in stats.columns])[:, np.newaxis], ax=ax, cbar=False, \
+                                      cmap=cmap, fmt="", xticklabels=False, yticklabels=False, square=None)        
+            else:
+                table_annotation = np.array([f'{ct_perc_per_cluster.iloc[i-1, int(x)]}%\n({ct_perc_per_celltype.iloc[i-1, int(x)]}%)' for x in range(len(stats.columns))])[:, np.newaxis]
+                g = sns.heatmap(np.array(stats.iloc[i-1, :])[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=[cluster_color[stats.columns[i-1]]], ax=ax, fmt='', xticklabels=True, yticklabels=False, square=None)
+                g.set_xticklabels([f'cluster {stats.index[i-1]}'], rotation=0)
+                g.xaxis.tick_top() # x axis on top
+        axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
+        fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
+
     def save_metrics(self):
         # save metrics results in csv format
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
