@@ -286,9 +286,9 @@ class CommunityClusteringAlgo(ABC):
                     ax.set_title(f'{color_system} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
                     
                     if color_system == 'hsv':
-                        plane_names = ['(1-H)', '(1-S)', '(1-V)']
+                        plane_names = ['H\'', 'S\'', 'V\'']
                     elif color_system == 'rgb':
-                        plane_names = ['1-R', '1-G', '1-B']
+                        plane_names = ['R\'', 'G\'', 'B\'']
                     
                     ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
                                 transform=ax.transAxes, fontsize=12, va='center', ha='left')
