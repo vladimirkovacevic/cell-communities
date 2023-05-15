@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 
 import argparse as ap
 import anndata as ad
@@ -10,6 +11,7 @@ from core import *
 
 
 if __name__ == '__main__':
+    start_time = time.perf_counter()
 
     parser = ap.ArgumentParser(description='A script that performs cell communities clusterization on single and multiple slices of ST data.')
     parser.add_argument('-f', '--files', help='csv list of file paths to file that contain data to be analyzed/clustered', type=str, required=True)
@@ -137,4 +139,9 @@ if __name__ == '__main__':
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
 
+    end_time = time.perf_counter()
+    total_time = end_time - start_time
+    print(f'main.py took {total_time:.4f}s')
+
+    logging.info(f'main.py took {total_time:.4f}s')
     logging.warning('END')
