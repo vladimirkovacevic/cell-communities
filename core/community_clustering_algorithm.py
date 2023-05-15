@@ -319,7 +319,7 @@ class CommunityClusteringAlgo(ABC):
                     plt.close()
         else:
             logging.warn(f'Unsupported color system: {color_system}.')
-            
+
     @timeit
     def plot_celltype_table(self):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
@@ -357,18 +357,20 @@ class CommunityClusteringAlgo(ABC):
         cluster_color = dict(zip(stats.columns, cluster_palette))
 
         # cell type colors from adata.uns['annotation_colors'] if exists
-        cmap = mcolors.ListedColormap([mcolors.hex2color(hexc) for hexc in self.annotation_palette]) if self.annotation_palette!=None else None
+        cmap = mcolors.ListedColormap(["#FFFFFF"] + [mcolors.hex2color(hexc) for hexc in self.annotation_palette]) if self.annotation_palette!=None else None
+        column_cmap = ["#FFFFFF" for _ in range(stats.shape[1])]
 
         for i, ax in enumerate(axes):
             if i == 0:
-                g = sns.heatmap(np.array(range(len(stats.columns)))[:,np.newaxis], linewidths=0.5, linecolor='gray', \
-                                annot=np.array([column for column in stats.columns])[:, np.newaxis], ax=ax, cbar=False, \
+                g = sns.heatmap(np.array(range(len(stats.columns) + 1))[:,np.newaxis], linewidths=0.5, linecolor='gray', \
+                                annot=np.array([''] + [column for column in stats.columns])[:, np.newaxis], ax=ax, cbar=False, \
                                       cmap=cmap, fmt="", xticklabels=False, yticklabels=False, square=None)        
             else:
-                table_annotation = np.array([f'{ct_perc_per_cluster.iloc[i-1, int(x)]}%\n({ct_perc_per_celltype.iloc[i-1, int(x)]}%)' for x in range(len(stats.columns))])[:, np.newaxis]
-                g = sns.heatmap(np.array(stats.iloc[i-1, :])[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=[cluster_color[stats.columns[i-1]]], ax=ax, fmt='', xticklabels=True, yticklabels=False, square=None)
-                g.set_xticklabels([f'cluster {stats.index[i-1]}'], rotation=0)
-                g.xaxis.tick_top() # x axis on top
+                table_annotation = np.array([f'cluster {stats.index[i-1]}'] + [f'{ct_perc_per_cluster.iloc[i-1, int(x)]}%\n({ct_perc_per_celltype.iloc[i-1, int(x)]}%)' for x in range(len(stats.columns))])[:, np.newaxis]
+                column_cmap[0] = cluster_color[stats.columns[i-1]]
+                g = sns.heatmap(np.array(range(stats.shape[1]+1))[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap, ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
+                # g.set_xticklabels([f'cluster {stats.index[i-1]}'], rotation=0)
+                # g.xaxis.tick_top() # x axis on top
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
 
