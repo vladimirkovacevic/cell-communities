@@ -101,7 +101,12 @@ class CommunityClusteringAlgo(ABC):
         # # plot clustering after majority voting for each subwindow
         # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=cluster_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
+        labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
+        if 'unknown' in labels:
+            labels = labels[labels!='unknown']
+        palette = [cluster_palette[x] for x in np.array(labels).astype(int)]
+        palette.append('#CCCCCC')
+        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
