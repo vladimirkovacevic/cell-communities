@@ -93,6 +93,9 @@ if __name__ == '__main__':
     # MERGE TISSUE ANNDATA
     # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
     merged_tissue = ad.concat([a.get_tissue() for a in algo_list], axis=0, join='outer')
+    # if tissues have different sets of cell those columns are filled with NANs
+    # this is corrected by writing 0s
+    merged_tissue.X.fillna(0)
 
     # CLUSTERING (WINDOW_LABELS)
     sc.pp.neighbors(merged_tissue, use_rep='X')
