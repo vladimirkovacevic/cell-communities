@@ -218,7 +218,7 @@ class CommunityClusteringAlgo(ABC):
                 ax[0].set_title(f'cell types')
                 ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 
-                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette=cluster_palette, spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
+                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette=[cluster_palette[int(cluster[0])]], spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
                 ax[1].set_title(f'cell community')
                 ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
@@ -366,7 +366,7 @@ class CommunityClusteringAlgo(ABC):
         fig.subplots_adjust(wspace=0, hspace=0)
 
         # create a dictionary mapping each cluster to its corresponding color
-        cluster_color = dict(zip(stats.columns, cluster_palette))
+        cluster_color = dict(zip(stats.columns, [cluster_palette[int(x)] for x in stats.index]))
 
         # cell type colors from adata.uns['annotation_colors'] if exists
         cmap = mcolors.ListedColormap(["#FFFFFF"] + [mcolors.hex2color(hexc) for hexc in self.annotation_palette]) if self.annotation_palette!=None else None
