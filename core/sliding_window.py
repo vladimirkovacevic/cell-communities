@@ -136,7 +136,7 @@ class SlidingWindow(CommunityClusteringAlgo):
             # MAX VOTE
             # max vote is saved in a new variable (not changed in tissue.obs) so that it does not have diagonal effect on other labels during refinement
             # max_voting result is created for each subwindow, while the 'leiden' clustering was defined for each window
-            leiden_max_vote.loc[location] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else np.nan
+            leiden_max_vote.loc[location] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else 'unknown'
 
         # copy clustering results from subwindows to cells of those subwindows in adata object
         self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(leiden_max_vote.loc[self.adata.obs['window_spatial']])
@@ -188,7 +188,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
     def community_calling_partial(self, df):
         x_min = self.adata.obs['Centroid_X'].min()
         y_min = self.adata.obs['Centroid_Y'].min()
-        result = pd.Series(index=df.index)
+        result = pd.Series(index=df.index, dtype='str')
         cache = {}
 
         for index, cell in tqdm(df.iterrows(), desc="Per cell computation in a subset of all cells... ", total=df.shape[0]):
@@ -216,7 +216,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                     key: cell_labels_all.get(key, 0) + cell_labels.get(key, 0)
                     for key in set(cell_labels_all) | set(cell_labels)
                 }
-            max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else np.nan
+            max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else 'unknown'
             result[index] = max_vote_label
         
         return result

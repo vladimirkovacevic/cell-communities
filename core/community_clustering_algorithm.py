@@ -120,8 +120,10 @@ class CommunityClusteringAlgo(ABC):
         # extract information on leiden clustering labels and cell types to create cell communities statistics
         clustering_labels = f'tissue_{self.method_key}'
         cell_types_communities = self.adata.obs[[clustering_labels, self.annotation]]
-        # # remove cells with unknown cell community label
-        # cell_types_communities = cell_types_communities[self.adata.obs[clustering_labels] != 'unknown']
+        # remove cells with unknown cell community label
+        # Remove rows with 'unknown' clustering label
+        cell_types_communities = cell_types_communities[cell_types_communities[clustering_labels] != 'unknown']
+        cell_types_communities[clustering_labels] = cell_types_communities[clustering_labels].cat.remove_categories('unknown')
 
         stats_table = {}
         # calculate cell type mixtures for every cluster
