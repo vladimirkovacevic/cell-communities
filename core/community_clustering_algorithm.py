@@ -139,6 +139,11 @@ class CommunityClusteringAlgo(ABC):
         stats = pd.DataFrame(stats_table).T
         stats.columns.name = "cell types"
 
+        # if there are cell types with 0 cells in every cluster remove them
+        for col in stats.columns:
+            if sum(stats.loc[:, col]) == 0:
+                stats = stats.drop(labels=col, axis=1)
+
         # save absolute cell mixtures to tissue
         self.tissue.uns['cell mixtures'] = stats.iloc[:,:].copy()
 
@@ -146,7 +151,7 @@ class CommunityClusteringAlgo(ABC):
         stats['total_counts'] = np.array([sum(stats.loc[row, :]) for row in stats.index]).astype(int)
 
         # add row with total counts per cell types
-        cell_type_counts = {ct:[int(sum(stats[ct]))] for ct in self.tissue.var.index}
+        cell_type_counts = {ct:[int(sum(stats[ct]))] for ct in stats.columns}
         stats = pd.concat([stats, pd.DataFrame(cell_type_counts, index=['total_cells'])])
 
         # divide each row with total sum of cells per cluster and mul by 100 to get percentages
