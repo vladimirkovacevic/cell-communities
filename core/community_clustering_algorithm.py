@@ -22,7 +22,6 @@ class CommunityClusteringAlgo(ABC):
         for key, value in params.items():
             setattr(self, key, value)
 
-        self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
         self.tissue = None
 
         cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
@@ -35,6 +34,7 @@ class CommunityClusteringAlgo(ABC):
                 logging.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type: {cell_num} cells < {int(cell_count_limit)} ({self.min_count_per_type} % of {len(self.adata)})')
         
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
+        self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
 
     @abstractmethod
     def run(self):
