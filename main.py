@@ -4,6 +4,7 @@ import logging
 import argparse as ap
 import anndata as ad
 import scanpy as sc
+import numpy as np
 
 from core import *
 
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     merged_tissue = ad.concat([a.get_tissue() for a in algo_list], axis=0, join='outer')
     # if tissues have different sets of cell those columns are filled with NANs
     # this is corrected by writing 0s
-    merged_tissue.X.fillna(0)
+    merged_tissue.X[np.isnan(merged_tissue.X)] = 0.0
 
     # CLUSTERING (WINDOW_LABELS)
     sc.pp.neighbors(merged_tissue, use_rep='X')
