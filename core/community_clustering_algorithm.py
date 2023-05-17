@@ -23,9 +23,17 @@ cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c56
                   "#ffd166","#06d6a0","#118ab2","#073b4c", "#fbf8cc","#fde4cf", \
                   "#ffcfd2","#f1c0e8","#cfbaf0","#a3c4f3","#90dbf4","#8eecf5", \
                   "#98f5e1","#b9fbc0", "#0a0908","#22333b","#f2f4f3","#a9927d","#5e503f",\
-                  "#10002b","#240046","#3c096c","#5a189a","#7b2cbf","#9d4edd","#c77dff","#e0aaff"]
-
-
+                  "#10002b","#240046","#3c096c","#5a189a","#7b2cbf","#9d4edd","#c77dff","#e0aaff", \
+                  "#C32148","#FD0E35","#C62D42","#B94E48","#FF5349","#FE4C40","#FE6F5E","#FF9980", \
+                  "#FF7034","#FF681F","#FF8833","#FFB97B","#E77200","#FFAE42","#FBE7B2","#F2C649", \
+                  "#F8D568","#FCD667","#FED85D","#FBE870","#F1E788","#B5B35C","#ECEBBD","#FFFF99", \
+                  "#FFFF9F","#AFE313","#C5E17A","#7BA05B","#9DE093","#63B76C","#01A638","#5FA777", \
+                  "#93DFB8","#33CC99","#1AB385","#29AB87","#00CC99","#00755E","#01796F","#00CCCC", \
+                  "#008080","#8FD8D8","#95E0E8","#6CDAE7","#2D383A","#76D7EA","#0095B7","#009DC4",\
+                  "#02A4D3","#93CCEA","#2887C8","#003366","#0066CC","#1560BD","#0066FF","#A9B2C3", \
+                  "#C3CDE6","#3C69E7","#7A89B8","#4F69C6","#8D90A1","#9999CC","#766EC8","#6456B7", \
+                  "#652DC1","#6B3FA0","#8359A3"]
+                  
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
         sc.settings.verbosity = 3 if params['verbose'] else params['verbose']
