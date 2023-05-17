@@ -172,7 +172,7 @@ class CommunityClusteringAlgo(ABC):
         stats.iloc[:-1, :-1] = stats.iloc[:-1, :-1].div(stats['total_counts'][:-1], axis=0).mul(100).astype(int)
 
         # add column with percentage of all cells belonging to a cluster
-        stats['perc_of_all_cells'] = np.around(stats['total_counts'] / stats['total_counts'].sum() * 100, decimals=1)
+        stats['perc_of_all_cells'] = np.around(stats['total_counts'] / stats['total_counts'][-1] * 100, decimals=1)
 
         # save cell mixture statistics to tissue
         self.tissue.uns['cell mixtures stats'] = stats.iloc[:, :]
