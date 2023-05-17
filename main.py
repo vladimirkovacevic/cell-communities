@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--spot_size', help='Size of the spot on plot', type=float, required=False, default=30)
     parser.add_argument('-v', '--verbose', help='Show logging messages. 0 - Show warrnings, >0 show info, <0 no output generated.', type=int, default=0)
     parser.add_argument('-p', '--plotting', help='Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - save all plots (cell type images, statisctics and cell mixture plots)', type=int, required=False, default=2)
+    parser.add_argument('--project_name', help='Project name that is used to name a directory containing all the slices used', type=str, required=False, default="Project")
     parser.add_argument('--skip_stats', help='Skip statistics calculation on cell community clustering result. A table of cell mixtures and comparative spatial plots of cell types and mixtures will not be created.', type=bool, required=False, default=False)
     parser.add_argument('--total_cell_norm', help='Total number of cells per window mixture after normalization', type=int, required=False, default=10000)
     parser.add_argument('--downsample_rate', help='Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics', type=int, required=False, default=80)
@@ -55,6 +56,11 @@ if __name__ == '__main__':
 
     algo_list = []
     tissue_list = []
+    win_sizes = "_".join([i for i in args.win_sizes.split(',')])
+    args.project_name += f"_r{args.resolution}_ws{win_sizes}_en{args.entropy_thres}_sct{args.scatter_thres}_dwr{args.downsample_rate}_mcc{args.min_cells_coeff}"
+    args.out_path = os.path.join(args.out_path, args.project_name)
+    if not os.path.exists(args.out_path):
+            os.mkdir(args.out_path)
     # FOR all slices
     for slice_id, file in enumerate(args.files.split(',')):
         # READ CELL TYPE ADATA
@@ -121,7 +127,8 @@ if __name__ == '__main__':
 
         # save anndata objects for further use
         if args.save_adata:
-            algo.save_adata()
+            algo.save_anndata()
+        algo.save_community_labels()
         algo.save_tissue()
 
         # PLOT COMMUNITIES & STATISTICS

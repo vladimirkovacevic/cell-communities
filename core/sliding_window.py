@@ -23,7 +23,7 @@ class SlidingWindow(CommunityClusteringAlgo):
             "The number of sliding steps must be equal to the number of window sizes."
         win_sizes = "_".join([str(i) for i in self.win_sizes_list])
         self.params_suffix = f"_sldwin_sl{self.slice_id}_r{self.resolution}_ws{win_sizes}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc{self.min_cells_coeff}"
-        self.filename = self.adata.uns['sample_name'] + self.params_suffix
+        self.filename = self.adata.uns['sample_name']
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
         # create results folder
         if not os.path.exists(self.dir_path):

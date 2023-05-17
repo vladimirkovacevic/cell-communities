@@ -411,11 +411,17 @@ class CommunityClusteringAlgo(ABC):
 
         logging.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
 
-    def save_adata(self, suffix=''):
+    def save_anndata(self, suffix=''):
         # save anndata file
         self.adata.write_h5ad(os.path.join(self.dir_path, f'{self.filename}{suffix}.h5ad'), compression="gzip")
 
         logging.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
+    
+    def save_community_labels(self):
+        # save community labels from anndata file
+        self.adata.obs[f'tissue_{self.method_key}'].to_csv(os.path.join(self.dir_path, f'{self.filename}.csv'))
+
+        logging.info(f'Saved community labels after clustering as a part of original anndata file to {self.filename}.csv')
 
     def save_mixture_stats(self):
         # save cell mixture statistics
