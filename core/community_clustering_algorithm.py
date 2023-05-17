@@ -73,7 +73,7 @@ class CommunityClusteringAlgo(ABC):
     @timeit
     def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
+        sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title="")
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -106,7 +106,7 @@ class CommunityClusteringAlgo(ABC):
             labels = labels[labels!='unknown']
         palette = [cluster_palette[x] for x in np.array(labels).astype(int)]
         palette.append('#CCCCCC')
-        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False)
+        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title="")
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
