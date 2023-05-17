@@ -192,14 +192,21 @@ class CommunityClusteringAlgo(ABC):
         # put colormaps of your choice in a list:
         cmap_cycle = cycle(['Greens', 'Reds', 'Blues', 'Oranges', 'Purples'])
 
-        for i, ax in enumerate(axes):
-            g = sns.heatmap(pd.DataFrame(stats.iloc[:, i]), vmin=0.0, vmax=50, linewidths=0, linecolor=None, annot=True, cbar=False, ax=ax, \
+        for i, ax in enumerate(axes[:-2]):
+            sns.heatmap(pd.DataFrame(stats.iloc[:, i]), vmin=0.0, vmax=70, linewidths=0, linecolor=None, annot=True, cbar=False, ax=ax, \
                             cmap=cmap_cycle.__next__(),fmt='4.0f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
-            g.set_xticklabels(g.get_xticklabels(), rotation=70)
-            g.xaxis.tick_top() # x axis on top
-        # final column should have the sum of all cells per cluster
-        sns.heatmap(pd.DataFrame(stats.iloc[:, -1]), annot=True, linewidths=0, linecolor=None, cbar=False, cmap=None, ax=ax, \
-                    fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
+        # total_counts column - sum of all cells per cluster
+        sns.heatmap(pd.DataFrame(stats.iloc[:, -2]), annot=True, vmin=0, vmax=stats.iloc[-1, -2], linewidths=0, linecolor=None, \
+            cbar=False, cmap='Reds', ax=axes[-2], fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
+        # perf_of_all_cells column - perc of all tissue cells in each cluster
+        sns.heatmap(pd.DataFrame(stats.iloc[:, -1]), annot=True, vmin=0, vmax=100, linewidths=0, linecolor=None, cbar=False, \
+            cmap='Reds', ax=axes[-1], fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
+        
+        # x axis on top
+        for ax in axes:
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
+            ax.xaxis.tick_top() 
+
         plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), dpi=400)
         plt.close()
 
