@@ -56,8 +56,7 @@ if __name__ == '__main__':
 
     algo_list = []
     tissue_list = []
-    win_sizes_list = [int(w) for w in args.win_sizes.split(',')]
-    win_sizes = "_".join([str(i) for i in win_sizes_list])
+    win_sizes = "_".join([i for i in args.win_sizes.split(',')])
     args.project_name += f"_r{args.resolution}_ws{win_sizes}_en{args.entropy_thres}_sct{args.scatter_thres}_dwr{args.downsample_rate}_mcc{args.min_cells_coeff}"
     args.out_path = os.path.join(args.out_path, args.project_name)
     if not os.path.exists(args.out_path):
