@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_perc_celltype', help='Minimum percentage of cells of a cell type which at least min_num_celltype cell types need to have to show a cluster in plot_celltype_table()', type=int, required=False, default=15)
     parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
     parser.add_argument('--color_plot_system', help='Color system for display of cluster specific windows.', type=str, required=False, default='hsv', choices={'hsv', 'rgb'})
-    parser.add_argument('--save_labels', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
+    parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
     parser.add_argument('--min_count_per_type', help='Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages)', type=float, required=False, default=0.1)
 
 
@@ -126,8 +126,9 @@ if __name__ == '__main__':
         algo.community_calling()
 
         # save anndata objects for further use
-        if args.save_labels:
-            algo.save_community_labels()
+        if args.save_adata:
+            algo.save_anndata()
+        algo.save_community_labels()
         algo.save_tissue()
 
         # PLOT COMMUNITIES & STATISTICS
