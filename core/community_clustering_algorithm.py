@@ -134,8 +134,7 @@ class CommunityClusteringAlgo(ABC):
         clustering_labels = f'tissue_{self.method_key}'
         cell_types_communities = self.adata.obs[[clustering_labels, self.annotation]]
         # remove cells with unknown cell community label
-        # Remove rows with 'unknown' clustering label
-        if 'unknown' in cell_types_communities[clustering_labels]:
+        if 'unknown' in cell_types_communities[clustering_labels].cat.categories:
             cell_types_communities = cell_types_communities[cell_types_communities[clustering_labels] != 'unknown']
             cell_types_communities[clustering_labels] = cell_types_communities[clustering_labels].cat.remove_categories('unknown')
 
