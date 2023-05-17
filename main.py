@@ -61,6 +61,10 @@ if __name__ == '__main__':
         if file.endswith('.h5ad'):
             adata = sc.read(file)
             adata.uns['slice_id'] = slice_id
+            if 'X_spatial' in adata.obsm:
+                adata.obsm['spatial'] = adata.obsm['X_spatial'].copy()
+            elif 'spatial_stereoseq' in adata.obsm:
+                adata.obsm['spatial'] = adata.obsm['spatial_stereoseq'].copy()
         else:
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
