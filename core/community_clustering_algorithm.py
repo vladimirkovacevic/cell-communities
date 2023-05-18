@@ -79,6 +79,9 @@ class CommunityClusteringAlgo(ABC):
 
     def get_community_labels(self):
         return self.adata.obs[f'tissue_{self.method_key}']
+
+    def get_cell_mixtures(self):
+        return self.tissue.uns['cell mixtures stats']
     
     def set_clustering_labels(self, labels):
         self.tissue.obs.loc[:, 'leiden'] = labels

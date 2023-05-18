@@ -154,6 +154,7 @@ if __name__ == '__main__':
     df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).T
     df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
     plot_cell_perc_in_community_per_slice(df, args.out_path)
+    celltype_mixtures_total_plot([algo.get_cell_mixtures() for algo in algo_list])
     end_time = time.perf_counter()
     total_time = end_time - start_time
     print(f'main.py took {total_time:.4f}s')

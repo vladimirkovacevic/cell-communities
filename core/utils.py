@@ -18,6 +18,10 @@ def timeit(func):
         return result
     return timeit_wrapper
 
+@timeit 
+def celltype_mixtures_total_plot(cell_mixtures):
+    pass
+
 @timeit
 def plot_cell_perc_in_community_per_slice(df, path):
     sc.settings.set_figure_params(dpi=200, facecolor='white')
