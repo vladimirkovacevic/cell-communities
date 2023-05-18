@@ -142,7 +142,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(leiden_max_vote.loc[self.adata.obs['window_spatial']])
 
         logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
-
+    
 
 class SlidingWindowMultipleSizes(SlidingWindow):
     def __init__(self, adata, slice_id, input_file_path, **params):

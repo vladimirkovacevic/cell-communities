@@ -1,5 +1,11 @@
 from functools import wraps
 import time
+import seaborn as sns
+import scanpy as sc
+from matplotlib import pyplot as plt
+import pandas as pd
+import os
+
 
 def timeit(func):
     @wraps(func)
@@ -12,6 +18,17 @@ def timeit(func):
         return result
     return timeit_wrapper
 
+@timeit
+def plot_cell_perc_in_community_per_slice(df, path):
+    sc.settings.set_figure_params(dpi=200, facecolor='white')
+    sns.set(font_scale=2)
+    plt.figure(figsize=(15, 15))
+
+    ax = sns.heatmap(df, annot=True, fmt=".2%", cmap="Greys", xticklabels=True, yticklabels=True, square=True, cbar=False)
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top')
+    plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'))
+    plt.close()
 
 @timeit
 def calculate_something(num):
