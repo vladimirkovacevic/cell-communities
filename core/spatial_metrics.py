@@ -37,10 +37,10 @@ def calculate_spatial_metrics(adata, unique_cell_type, downsample_rate, annotati
     cell_t_images = {}
     for cell_t in unique_cell_type:
         tissue_window = np.zeros(shape=(
-            int(np.ceil((cx_max - cx_min + 1) / downsample_rate)), int(np.ceil((cy_max - cy_min + 1) / downsample_rate))),
+            int(np.ceil((cy_max - cy_min + 1) / downsample_rate)), int(np.ceil((cx_max - cx_min + 1) / downsample_rate))),
                                  dtype=np.int8)
-        tissue_window[((adata.obs['x_coor'][adata.obs[annotation] == cell_t] - cx_min) / downsample_rate).astype(int), (
-                    (adata.obs['y_coor'][adata.obs[annotation] == cell_t] - cy_min) / downsample_rate).astype(int)] = 1
+        tissue_window[((adata.obs['y_coor'][adata.obs[annotation] == cell_t] - cy_min) / downsample_rate).astype(int), (
+                    (adata.obs['x_coor'][adata.obs[annotation] == cell_t] - cx_min) / downsample_rate).astype(int)] = 1
         cell_t_images[cell_t] = tissue_window
 
         entropy.loc[cell_t] = entropy2D(tissue_window)
