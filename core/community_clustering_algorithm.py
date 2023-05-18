@@ -280,7 +280,9 @@ class CommunityClusteringAlgo(ABC):
     def colorplot_stats(self, color_system='hsv'):
         supported_color_systems = ['hsv', 'rgb']
         if color_system in supported_color_systems:
-            stats = self.tissue.uns['cell mixtures']
+            stats = self.tissue.uns['cell mixtures'].copy()
+            # extract total counts per cluster
+            total_counts = np.sum(stats, axis=1)
             # divide each row with total sum of cells per cluster and mul by 100 to get percentages
             stats.iloc[:, :] = stats.iloc[:, :].div(np.array([sum(stats.loc[row, :]) for row in stats.index]), axis=0).mul(100).astype(int)
 
@@ -290,60 +292,62 @@ class CommunityClusteringAlgo(ABC):
             cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
 
             for cluster in stats.iterrows():
-                ct_perc = cluster[1].sort_values(ascending=False)
-                top_three_ct = ct_perc.index.values[0:3]
+                # only display clusters with more than min_cells_in_cluster cells
+                if total_counts[cluster[0]] > self.min_cluster_size:
+                    ct_perc = cluster[1].sort_values(ascending=False)
+                    top_three_ct = ct_perc.index.values[0:3]
 
-                cl_win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster[0]]
-                cl_win_cell_distrib = cl_win_cell_distrib[:, top_three_ct]
+                    cl_win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster[0]]
+                    cl_win_cell_distrib = cl_win_cell_distrib[:, top_three_ct]
 
-                # for each pair of window size and sliding step a separate color plot should be made
-                for window_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
-                    # extract data for a specfic window size
-                    win_cell_distrib = cl_win_cell_distrib[cl_win_cell_distrib.obsm['spatial'][:,3] == window_size]
-                    # data is a DataFrame with rows for each window, columns of 3 top most cell types for
-                    # current cell mixture cluster, with data on cell type in percentages [0.00-1.00]
-                    # The last is achieved by dividing the features with self.total_cell_norm
-                    data_df = pd.DataFrame(win_cell_distrib.X/self.total_cell_norm, columns=win_cell_distrib.var.index, index=win_cell_distrib.obs.index)
-                    # init image
-                    mixture_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
+                    # for each pair of window size and sliding step a separate color plot should be made
+                    for window_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
+                        # extract data for a specfic window size
+                        win_cell_distrib = cl_win_cell_distrib[cl_win_cell_distrib.obsm['spatial'][:,3] == window_size]
+                        # data is a DataFrame with rows for each window, columns of 3 top most cell types for
+                        # current cell mixture cluster, with data on cell type in percentages [0.00-1.00]
+                        # The last is achieved by dividing the features with self.total_cell_norm
+                        data_df = pd.DataFrame(win_cell_distrib.X/self.total_cell_norm, columns=win_cell_distrib.var.index, index=win_cell_distrib.obs.index)
+                        # init image
+                        mixture_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
 
-                    for window in data_df.iterrows():
-                        wx = int(window[0].split("_")[0])
-                        wy = int(window[0].split("_")[1])
-                        mixture_image[int(wy*sliding_step-cy_min) : int(wy*sliding_step + window_size-cy_min), int(wx*sliding_step-cx_min) : int(wx*sliding_step + window_size-cx_min), :] = 1 - window[1].values.astype(np.float32)
-                    
-                    # convert image of selected color representation to rgb
-                    if color_system == 'hsv':
-                        # if hsv display the 1 - percentage since the colors will be too dark
-                        rgb_image = color.hsv2rgb(mixture_image)
-                    elif color_system == 'rgb':
-                        rgb_image = mixture_image
-                    # plot the colored window image of the cell scatterplot
-                    fig, ax = plt.subplots(nrows=1, ncols=1)
-                    # cell scatterplot for visual spatial reference
-                    plt.scatter(x = self.adata.obsm['spatial'][:,0]-cx_min, y=self.adata.obsm['spatial'][:,1]-cy_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
-                    # mask of window positions
-                    window_mask = rgb_image[:,:,1] != 0
-                    # mask adjusted to alpha channel and added to rgb image
-                    window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
-                    rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
-                    # plot windows, where empty areas will have alpha=0, making them transparent
-                    plt.imshow(rgba_image, zorder=2)
-                    plt.axis('off')
-                    ax.grid(visible=False)
-                    ax.set_title(f'{color_system} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
-                    
-                    if color_system == 'hsv':
-                        plane_names = ['H\'', 'S\'', 'V\'']
-                    elif color_system == 'rgb':
-                        plane_names = ['R\'', 'G\'', 'B\'']
-                    
-                    ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
-                                transform=ax.transAxes, fontsize=12, va='center', ha='left')
-            
-                    fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=200)
+                        for window in data_df.iterrows():
+                            wx = int(window[0].split("_")[0])
+                            wy = int(window[0].split("_")[1])
+                            mixture_image[int(wy*sliding_step-cy_min) : int(wy*sliding_step + window_size-cy_min), int(wx*sliding_step-cx_min) : int(wx*sliding_step + window_size-cx_min), :] = 1 - window[1].values.astype(np.float32)
+                        
+                        # convert image of selected color representation to rgb
+                        if color_system == 'hsv':
+                            # if hsv display the 1 - percentage since the colors will be too dark
+                            rgb_image = color.hsv2rgb(mixture_image)
+                        elif color_system == 'rgb':
+                            rgb_image = mixture_image
+                        # plot the colored window image of the cell scatterplot
+                        fig, ax = plt.subplots(nrows=1, ncols=1)
+                        # cell scatterplot for visual spatial reference
+                        plt.scatter(x = self.adata.obsm['spatial'][:,0]-cx_min, y=self.adata.obsm['spatial'][:,1]-cy_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
+                        # mask of window positions
+                        window_mask = rgb_image[:,:,1] != 0
+                        # mask adjusted to alpha channel and added to rgb image
+                        window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
+                        rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
+                        # plot windows, where empty areas will have alpha=0, making them transparent
+                        plt.imshow(rgba_image, zorder=2)
+                        plt.axis('off')
+                        ax.grid(visible=False)
+                        ax.set_title(f'{color_system} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
+                        
+                        if color_system == 'hsv':
+                            plane_names = ['H\'', 'S\'', 'V\'']
+                        elif color_system == 'rgb':
+                            plane_names = ['R\'', 'G\'', 'B\'']
+                        
+                        ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
+                                    transform=ax.transAxes, fontsize=12, va='center', ha='left')
+                
+                        fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=200)
 
-                    plt.close()
+                        plt.close()
         else:
             logging.warn(f'Unsupported color system: {color_system}.')
 
@@ -352,7 +356,7 @@ class CommunityClusteringAlgo(ABC):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
         sns.set(font_scale=1)
 
-        stats = self.tissue.uns['cell mixtures']
+        stats = self.tissue.uns['cell mixtures'].copy()
 
         # calculate percentage of all cells of one cell type belonging to each cluster
         ct_perc_per_celltype = stats.iloc[:,:].div(np.array([sum(stats.loc[:, col]) for col in stats.columns]), axis=1).mul(100).astype(int)
