@@ -405,7 +405,7 @@ class CommunityClusteringAlgo(ABC):
         cluster_color = dict(zip(stats.index, [cluster_palette[int(x)] for x in stats.index]))
 
         # cell type colors from adata.uns['annotation_colors'] if exists
-        row_cmap = ["#FFFFFF"] + self.annotation_palette
+        row_cmap = ["#FFFFFF"] + list(self.annotation_palette.values())
         # inner area of the table is of white background
         column_cmap = ["#FFFFFF" for _ in range(stats.shape[1])]
 
