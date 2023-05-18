@@ -24,8 +24,9 @@ def plot_cell_perc_in_community_per_slice(df, path):
     sns.set(font_scale=1)
     plt.figure(figsize=(15, 15))
 
-    sns.heatmap(df, annot=True, fmt=".2%", cmap="Greys", xticklabels=True, yticklabels=True, square=True, cbar=False)
-
+    ax = sns.heatmap(df, annot=True, fmt=".2%", cmap="Greys", xticklabels=True, yticklabels=True, square=True, cbar=False)
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top')
     plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'), dpi=400)
     plt.close()
 
