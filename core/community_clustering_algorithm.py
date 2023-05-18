@@ -8,10 +8,7 @@ import numpy as np
 import scanpy as sc
 import pandas as pd
 import seaborn as sns
-import matplotlib
-import matplotlib.colors as mcolors
 from matplotlib import pyplot as plt
-
 
 from .utils import timeit
 
@@ -22,17 +19,20 @@ cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c56
                   "#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#ef476f", \
                   "#ffd166","#06d6a0","#118ab2","#073b4c", "#fbf8cc","#fde4cf", \
                   "#ffcfd2","#f1c0e8","#cfbaf0","#a3c4f3","#90dbf4","#8eecf5", \
-                  "#98f5e1","#b9fbc0", "#0a0908","#22333b","#f2f4f3","#a9927d","#5e503f",\
-                  "#10002b","#240046","#3c096c","#5a189a","#7b2cbf","#9d4edd","#c77dff","#e0aaff", \
-                  "#C32148","#FD0E35","#C62D42","#B94E48","#FF5349","#FE4C40","#FE6F5E","#FF9980", \
-                  "#FF7034","#FF681F","#FF8833","#FFB97B","#E77200","#FFAE42","#FBE7B2","#F2C649", \
-                  "#F8D568","#FCD667","#FED85D","#FBE870","#F1E788","#B5B35C","#ECEBBD","#FFFF99", \
-                  "#FFFF9F","#AFE313","#C5E17A","#7BA05B","#9DE093","#63B76C","#01A638","#5FA777", \
-                  "#93DFB8","#33CC99","#1AB385","#29AB87","#00CC99","#00755E","#01796F","#00CCCC", \
-                  "#008080","#8FD8D8","#95E0E8","#6CDAE7","#2D383A","#76D7EA","#0095B7","#009DC4",\
-                  "#02A4D3","#93CCEA","#2887C8","#003366","#0066CC","#1560BD","#0066FF","#A9B2C3", \
-                  "#C3CDE6","#3C69E7","#7A89B8","#4F69C6","#8D90A1","#9999CC","#766EC8","#6456B7", \
-                  "#652DC1","#6B3FA0","#8359A3"]
+                  '#FFFF99', '#FF7034', '#01A638', '#7A89B8', '#FE4C40', '#6B3FA0', \
+                  '#0066CC', '#C62D42', '#B5B35C', '#93DFB8', '#f2f4f3', '#10002b', \
+                  '#22333b', '#5FA777', '#766EC8', '#1AB385', '#AFE313', '#008080', \
+                  '#6456B7', '#A9B2C3', '#8FD8D8', '#2D383A', '#009DC4', '#93CCEA', \
+                  '#FF9980', '#2887C8', '#7BA05B', '#02A4D3', '#FE6F5E', '#4F69C6', \
+                  '#9d4edd', '#003366', '#ECEBBD', '#a9927d', '#00CC99', '#9DE093', \
+                  '#7b2cbf', '#b9fbc0', '#01796F', '#00CCCC', '#652DC1', '#5a189a', \
+                  '#63B76C', '#76D7EA', '#9999CC', '#FF5349', '#6CDAE7', '#00755E', \
+                  '#FBE870', '#3c096c', '#0066FF', '#FD0E35', '#c77dff', '#F1E788', \
+                  '#FFAE42', '#95E0E8', '#1560BD', '#C5E17A', '#8D90A1', '#FF8833', \
+                  '#FFFF9F', '#3C69E7', '#C3CDE6', '#F8D568', '#FCD667', '#29AB87', \
+                  '#8359A3', '#5e503f', '#FBE7B2', '#FFB97B', '#33CC99', '#F2C649', \
+                  '#B94E48', '#0095B7', '#E77200', '#FF681F', '#e0aaff', '#FED85D', \
+                  '#240046', '#0a0908', '#C32148', '#98f5e1']                  
                   
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
@@ -45,7 +45,6 @@ class CommunityClusteringAlgo(ABC):
         for key, value in params.items():
             setattr(self, key, value)
 
-        self.annotation_palette = list(self.adata.uns[f'{self.annotation}_colors']) if f'{self.annotation}_colors' in self.adata.uns else None
         self.tissue = None
 
         cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
@@ -59,6 +58,9 @@ class CommunityClusteringAlgo(ABC):
         
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
+
+        self.annotation_palette = list(self.adata.uns[f'{self.annotation}_colors']) if f'{self.annotation}_colors' in self.adata.uns else \
+            [cluster_palette[-x] for x in range(len(self.unique_cell_type))]
 
     @abstractmethod
     def run(self):
@@ -112,7 +114,8 @@ class CommunityClusteringAlgo(ABC):
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
-        palette = [cluster_palette[x] for x in np.array(labels).astype(int)]
+        int_lab = np.sort([int(lab) for lab in labels])
+        palette = [cluster_palette[lab] for lab in int_lab]
         palette.append('#CCCCCC')
         sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title="")
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
@@ -387,23 +390,22 @@ class CommunityClusteringAlgo(ABC):
         fig.subplots_adjust(wspace=0, hspace=0)
 
         # create a dictionary mapping each cluster to its corresponding color
-        cluster_color = dict(zip(stats.columns, [cluster_palette[int(x)] for x in stats.index]))
+        cluster_color = dict(zip(stats.index, [cluster_palette[int(x)] for x in stats.index]))
 
         # cell type colors from adata.uns['annotation_colors'] if exists
-        cmap = mcolors.ListedColormap(["#FFFFFF"] + [mcolors.hex2color(hexc) for hexc in self.annotation_palette]) if self.annotation_palette!=None else None
+        row_cmap = ["#FFFFFF"] + self.annotation_palette
+        # inner area of the table is of white background
         column_cmap = ["#FFFFFF" for _ in range(stats.shape[1])]
 
         for i, ax in enumerate(axes):
             if i == 0:
                 g = sns.heatmap(np.array(range(len(stats.columns) + 1))[:,np.newaxis], linewidths=0.5, linecolor='gray', \
                                 annot=np.array([''] + [column for column in stats.columns])[:, np.newaxis], ax=ax, cbar=False, \
-                                      cmap=cmap, fmt="", xticklabels=False, yticklabels=False, square=None)        
+                                      cmap=row_cmap, fmt="", xticklabels=False, yticklabels=False, square=None)        
             else:
                 table_annotation = np.array([f'cluster {stats.index[i-1]}'] + [f'{ct_perc_per_cluster.iloc[i-1, int(x)]}%\n({ct_perc_per_celltype.iloc[i-1, int(x)]}%)' for x in range(len(stats.columns))])[:, np.newaxis]
-                column_cmap[0] = cluster_color[stats.columns[i-1]]
+                column_cmap[0] = cluster_color[stats.index[i-1]]
                 g = sns.heatmap(np.array(range(stats.shape[1]+1))[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap, ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
-                # g.set_xticklabels([f'cluster {stats.index[i-1]}'], rotation=0)
-                # g.xaxis.tick_top() # x axis on top
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
 
