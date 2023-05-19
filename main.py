@@ -151,10 +151,10 @@ if __name__ == '__main__':
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
         cells_in_comm_per_slice[algo.filename] = algo.get_community_labels().value_counts(normalize=True).rename(algo.filename)
-    df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).T
+    df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
     df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
     plot_cell_perc_in_community_per_slice(df, args.out_path)
-    celltype_mixtures_total_plot([algo.get_cell_mixtures() for algo in algo_list])
+    celltype_mixtures_total_plot([algo.get_cell_mixtures().to_dict() for algo in algo_list], args.out_path)
     end_time = time.perf_counter()
     total_time = end_time - start_time
     print(f'main.py took {total_time:.4f}s')

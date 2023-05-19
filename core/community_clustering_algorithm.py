@@ -81,7 +81,7 @@ class CommunityClusteringAlgo(ABC):
         return self.adata.obs[f'tissue_{self.method_key}']
 
     def get_cell_mixtures(self):
-        return self.tissue.uns['cell mixtures stats']
+        return self.tissue.uns['cell mixtures']
     
     def set_clustering_labels(self, labels):
         self.tissue.obs.loc[:, 'leiden'] = labels
@@ -204,7 +204,7 @@ class CommunityClusteringAlgo(ABC):
         vmax_perc = np.max(np.ravel(stats.iloc[:-1,:-2]))
         for i, ax in enumerate(axes[:-2]):
             sns.heatmap(pd.DataFrame(stats.iloc[:, i]), vmin=0.0, vmax=vmax_perc, linewidths=0, linecolor=None, annot=True, cbar=False, ax=ax, \
-                            cmap=cmap_cycle.__next__(),fmt='4.0f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
+                            cmap=cmap_cycle.__next__(),fmt='4.2f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
         # total_counts column - sum of all cells per cluster
         sns.heatmap(pd.DataFrame(stats.iloc[:, -2]), annot=True, vmin=0, vmax=np.max(stats.iloc[:-1, -2]), linewidths=0, linecolor=None, \
             cbar=False, cmap='Greens', ax=axes[-2], fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
