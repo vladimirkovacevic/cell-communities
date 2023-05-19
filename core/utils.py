@@ -4,6 +4,7 @@ import scanpy as sc
 import pandas as pd
 import numpy as np
 import os
+import math
 
 from functools import wraps
 from functools import reduce
@@ -75,6 +76,16 @@ def plot_cell_perc_in_community_per_slice(df, path):
     ax.xaxis.set_label_position('top')
     plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'))
     plt.close()
+
+@timeit
+def plot_countplots_all_samples(samples, path):
+    columns = rows = math.ceil(math.sqrt(len(samples)))
+    plt.figure(figsize=(10, 10))
+    for i in range(1, columns*rows +1):
+        ax = plt.subplot(2,2,i)
+        sns.countplot(x=samples[i], dodge=False, ax=ax, hue=samples[i])
+        ax.set(xticklabels=[])
+    plt.show()
 
 @timeit
 def calculate_something(num):
