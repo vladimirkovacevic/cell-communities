@@ -76,6 +76,9 @@ class CommunityClusteringAlgo(ABC):
 
     def get_tissue(self):
         return self.tissue
+    
+    def get_adata(self):
+        return self.adata
 
     def get_community_labels(self):
         return self.adata.obs[f'tissue_{self.method_key}']
