@@ -63,7 +63,7 @@ def celltype_mixtures_total_plot(cell_mixtures, path):
         ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
         ax.xaxis.tick_top() 
 
-    plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'), dpi=400)
+    plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'))
     plt.close()
 
 
@@ -83,22 +83,23 @@ def plot_cell_perc_in_community_per_slice(df, path):
 def plot_cell_abundance_total(algos, path):
     fig, ax = plt.subplots(figsize=(20,10))
     fig.subplots_adjust(wspace=0)
+    sc.settings.set_figure_params(dpi=300, facecolor='white')
 
     cell_percentage_dfs = []
     plot_columns = []
     for algo in algos:
-        cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs['author_cell_type'].value_counts(normalize=True).mul(100).rename(algo.filename)))
+        cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[algo.annotation].value_counts(normalize=True).mul(100).rename(algo.filename)))
         plot_columns.append(algo.filename)
 
     cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0).reset_index()
-    cummulative_df.plot(x="index", y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="")
+    cummulative_df.plot(x="index", y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="", color=colors)
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
     ax.grid(False)
     ax.set_facecolor('white')
     plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
     plt.tight_layout()
-    plt.savefig(os.path.join(path, f'cell_abundance_all_slices.png'), dpi=400)
+    plt.savefig(os.path.join(path, f'cell_abundance_all_slices.png'))
     plt.close()
 
 @timeit
@@ -116,6 +117,7 @@ def cell_abundance_per_slice(algos, path):
 def cluster_abundance_total(algos, path):
     fig, ax = plt.subplots(figsize=(20,10))
     fig.subplots_adjust(wspace=0)
+    sc.settings.set_figure_params(dpi=300, facecolor='white')
 
     cell_percentage_dfs = []
     plot_columns = []
@@ -131,7 +133,7 @@ def cluster_abundance_total(algos, path):
     ax.set_facecolor('white')
     plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
     plt.tight_layout()
-    plt.savefig(os.path.join(path, f'cluster_abundance_all_slices.png'), dpi=400)
+    plt.savefig(os.path.join(path, f'cluster_abundance_all_slices.png'))
     plt.close()
 
 @timeit

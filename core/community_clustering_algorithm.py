@@ -1,6 +1,5 @@
 import logging
 import os
-from itertools import cycle
 from abc import ABC, abstractmethod
 
 from skimage import color
@@ -203,11 +202,10 @@ class CommunityClusteringAlgo(ABC):
         fig.subplots_adjust(wspace=0)
 
         # put colormaps of your choice in a list:
-        cmap_cycle = cycle(['Greys'])
         vmax_perc = np.max(np.ravel(stats.iloc[:-1,:-2]))
         for i, ax in enumerate(axes[:-2]):
             sns.heatmap(pd.DataFrame(stats.iloc[:, i]), vmin=0.0, vmax=vmax_perc, linewidths=0, linecolor=None, annot=True, cbar=False, ax=ax, \
-                            cmap=cmap_cycle.__next__(),fmt='4.2f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
+                            cmap="Greys", fmt='4.0f', xticklabels=True, yticklabels=True if i==0 else False, square=True)
         # total_counts column - sum of all cells per cluster
         sns.heatmap(pd.DataFrame(stats.iloc[:, -2]), annot=True, vmin=0, vmax=np.max(stats.iloc[:-1, -2]), linewidths=0, linecolor=None, \
             cbar=False, cmap='Greens', ax=axes[-2], fmt='4.0f', xticklabels=True, yticklabels=False, square=True)
