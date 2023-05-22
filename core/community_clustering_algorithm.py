@@ -150,6 +150,11 @@ class CommunityClusteringAlgo(ABC):
             cell_type_dict = {ct:0 for ct in self.unique_cell_type}
             for cell in cluster_data[self.annotation]:
                 cell_type_dict[cell]+=1
+
+            # remove excluded cell types
+            cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index.sort_values()}
+            
+            # create a dictionary of cluster cell type distributions
             stats_table[label] = {k:cell_type_dict[k] for k in cell_type_dict}
 
         stats = pd.DataFrame(stats_table).T
