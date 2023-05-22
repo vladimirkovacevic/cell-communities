@@ -81,13 +81,6 @@ def plot_cell_perc_in_community_per_slice(df, path):
 
 @timeit
 def plot_cell_abundance_total(algos, path):
-    # columns = rows = math.ceil(math.sqrt(len(samples)))
-    # plt.figure(figsize=(10, 10))
-    # for i in range(1, columns*rows +1):
-    #     ax = plt.subplot(2,2,i)
-    #     sns.countplot(x=samples[i], dodge=False, ax=ax, hue=samples[i])
-    #     ax.set(xticklabels=[])
-    # plt.show()
     fig, ax = plt.subplots(figsize=(20,10))
     fig.subplots_adjust(wspace=0)
 
@@ -101,9 +94,44 @@ def plot_cell_abundance_total(algos, path):
     cummulative_df.plot(x="index", y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="")
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+    ax.grid(False)
+    ax.set_facecolor('white')
     plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
     plt.tight_layout()
     plt.savefig(os.path.join(path, f'cell_abundance_all_slices.png'), dpi=400)
+    plt.close()
+
+@timeit
+def cell_abundance_per_slice(algos, path):
+    # columns = rows = math.ceil(math.sqrt(len(samples)))
+    # plt.figure(figsize=(10, 10))
+    # for i in range(1, columns*rows +1):
+    #     ax = plt.subplot(2,2,i)
+    #     sns.countplot(x=samples[i], dodge=False, ax=ax, hue=samples[i])
+    #     ax.set(xticklabels=[])
+    # plt.show()
+    pass
+
+@timeit 
+def cluster_abundance_total(algos, path):
+    fig, ax = plt.subplots(figsize=(20,10))
+    fig.subplots_adjust(wspace=0)
+
+    cell_percentage_dfs = []
+    plot_columns = []
+    for algo in algos:
+        cell_percentage_dfs.append(pd.DataFrame(algo.get_tissue().obs['leiden'].value_counts(normalize=True).mul(100).rename(algo.filename)))
+        plot_columns.append(algo.filename)
+
+    cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0).reset_index()
+    cummulative_df.plot(x="index", y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="")
+
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+    ax.grid(False)
+    ax.set_facecolor('white')
+    plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, f'cluster_abundance_all_slices.png'), dpi=400)
     plt.close()
 
 @timeit

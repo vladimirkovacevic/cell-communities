@@ -1,7 +1,7 @@
 import logging
 
 from .community_clustering_algorithm import CommunityClusteringAlgo
-from .utils import timeit, plot_cell_perc_in_community_per_slice, celltype_mixtures_total_plot, plot_cell_abundance_total
+from .utils import *
 from .spatial_metrics import calculate_spatial_metrics
 
 try:
