@@ -35,7 +35,7 @@ cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c56
                   '#240046', '#0a0908', '#C32148', '#98f5e1']                  
                   
 class CommunityClusteringAlgo(ABC):
-    def __init__(self, adata, slice_id, input_file_path, **params):
+    def __init__(self, adata, slice_id, input_file_path, tissue_palette, **params):
         sc.settings.verbosity = 3 if params['verbose'] else params['verbose']
         sc.settings.set_figure_params(dpi=300, facecolor='white')
         self.adata = adata
@@ -63,12 +63,12 @@ class CommunityClusteringAlgo(ABC):
         #    [cluster_palette[-x] for x in range(len(self.unique_cell_type))]
 
         for ct in self.unique_cell_type:
-            if ct not in self.tissue_palette:
+            if ct not in tissue_palette:
                 for clr in cluster_palette:
-                    if clr not in self.tissue_palette.values():
-                        params['tissue_palette'][ct] = clr
+                    if clr not in tissue_palette.values():
+                        tissue_palette[ct] = clr
                         break
-        self.annotation_palette = {ct : params['tissue_palette'][ct] for ct in self.unique_cell_type}
+        self.annotation_palette = {ct : tissue_palette[ct] for ct in self.unique_cell_type}
 
 
     @abstractmethod

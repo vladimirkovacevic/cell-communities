@@ -15,8 +15,8 @@ from core import CommunityClusteringAlgo
 
 
 class SlidingWindow(CommunityClusteringAlgo):
-    def __init__(self, adata, slice_id, input_file_path, **params):
-        super().__init__(adata, slice_id, input_file_path,  **params)
+    def __init__(self, adata, slice_id, input_file_path, tissue_palette, **params):
+        super().__init__(adata, slice_id, input_file_path, tissue_palette, **params)
         self.win_sizes_list = [int(w) for w in self.win_sizes.split(',')]
         self.sliding_steps_list = [int(s) for s in self.sliding_steps.split(',')]
         assert len(self.win_sizes_list) == len(self.sliding_steps_list), \
@@ -145,8 +145,8 @@ class SlidingWindow(CommunityClusteringAlgo):
     
 
 class SlidingWindowMultipleSizes(SlidingWindow):
-    def __init__(self, adata, slice_id, input_file_path, **params):
-        super().__init__(adata, slice_id, input_file_path,  **params)
+    def __init__(self, adata, slice_id, input_file_path, tissue_palette, **params):
+        super().__init__(adata, slice_id, input_file_path, tissue_palette, **params)
     
     def run(self):
         tissue_list = []

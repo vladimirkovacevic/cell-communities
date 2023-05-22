@@ -65,9 +65,10 @@ if __name__ == '__main__':
     win_sizes = "_".join([i for i in args.win_sizes.split(',')])
     args.project_name += f"_r{args.resolution}_ws{win_sizes}_en{args.entropy_thres}_sct{args.scatter_thres}_dwr{args.downsample_rate}_mcc{args.min_cells_coeff}"
     args.out_path = os.path.join(args.out_path, args.project_name)
-    args.tissue_palette = {}
     if not os.path.exists(args.out_path):
             os.mkdir(args.out_path)
+    
+    tissue_palette = {}
     
     number_of_slices = len(args.files.split(','))
     anno_figure, anno_ax = plt.subplots(nrows=args.number_of_rows, ncols=args.number_of_columns, squeeze=False)
@@ -81,12 +82,12 @@ if __name__ == '__main__':
             if 'X_spatial' in adata.obsm:
                 adata.obsm['spatial'] = adata.obsm['X_spatial'].copy()
             elif 'spatial_stereoseq' in adata.obsm:
-                adata.obsm['spatial'] = adata.obsm['spatial_stereoseq'].copy()
+                adata.obsm['spatial'] = np.array(adata.obsm['spatial_stereoseq'].copy())
         else:
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
         # FEATURE EXTRACTION (SLIDING_WINDOW)
-        algo = SlidingWindowMultipleSizes(adata, slice_id, file, **vars(args))
+        algo = SlidingWindowMultipleSizes(adata, slice_id, file, tissue_palette, **vars(args))
         # plot original annotation
         if args.plotting > 1:
             algo.plot_annotation(anno_ax[i, j])
