@@ -93,9 +93,11 @@ class CommunityClusteringAlgo(ABC):
         self.tissue.obs.loc[:, 'leiden'] = labels
 
     @timeit
-    def plot_annotation(self):
+    def plot_annotation(self, anno_ax):
         figure, ax = plt.subplots(nrows=1, ncols=1)
         sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=anno_ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}', )
+        anno_ax.get_legend().remove()
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
