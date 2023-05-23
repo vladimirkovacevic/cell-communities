@@ -95,8 +95,8 @@ def plot_cell_abundance_total(algos, path):
         cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[algo.annotation].value_counts(normalize=True).mul(100).rename(algo.filename)))
         plot_columns.append(algo.filename)
 
-    cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0).reset_index()
-    cummulative_df.plot(x="index", y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="", color=colors)
+    cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
+    cummulative_df.plot(y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="", color=colors)
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
     ax.grid(False)
@@ -108,14 +108,38 @@ def plot_cell_abundance_total(algos, path):
 
 @timeit
 def plot_cell_abundance_per_slice(algos, path):
-    # columns = rows = math.ceil(math.sqrt(len(samples)))
-    # plt.figure(figsize=(10, 10))
-    # for i in range(1, columns*rows +1):
-    #     ax = plt.subplot(2,2,i)
-    #     sns.countplot(x=samples[i], dodge=False, ax=ax, hue=samples[i])
-    #     ax.set(xticklabels=[])
-    # plt.show()
-    pass
+    number_of_samples = len(algos)
+    if number_of_samples<=2:
+        number_of_rows = 1
+        number_of_columns = number_of_samples
+    else:
+        number_of_rows = 2 if number_of_samples % 2 == 0 else 1
+        number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
+    fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10))
+    axes = axes.ravel()
+    fig.subplots_adjust(wspace=0)
+    sc.settings.set_figure_params(dpi=300, facecolor='white')
+
+    cell_percentage_dfs = []
+    plot_columns = []
+    for algo in algos:
+        cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[algo.annotation].value_counts(normalize=True).mul(100).rename(algo.filename)))
+        plot_columns.append(algo.filename)
+
+    cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
+
+    for i in range(number_of_rows * number_of_columns):
+        axes[i].yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+        axes[i].set_facecolor('white')
+        axes[i].set_title(plot_columns[i])
+        cummulative_df.plot(y=plot_columns[i], kind="bar", rot=70, ax=axes[i], xlabel="", color="grey", legend=False)
+        axes[i].grid(False)
+
+    for ax in axes:
+        ax.grid(False)
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, f'cell_abundance_per_slice.png'))
+    plt.close()
 
 @timeit 
 def plot_cluster_abundance_total(algos, path):
@@ -141,6 +165,42 @@ def plot_cluster_abundance_total(algos, path):
     plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
     plt.tight_layout()
     plt.savefig(os.path.join(path, f'cluster_abundance_all_slices.png'))
+    plt.close()
+
+@timeit
+def plot_cluster_abundance_per_slice(algos, path):
+    number_of_samples = len(algos)
+    if number_of_samples<=2:
+        number_of_rows = 1
+        number_of_columns = number_of_samples
+    else:
+        number_of_rows = 2 if number_of_samples % 2 == 0 else 1
+        number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
+    fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10))
+    axes = axes.ravel()
+    fig.subplots_adjust(wspace=0)
+    sc.settings.set_figure_params(dpi=300, facecolor='white')
+
+    cell_percentage_dfs = []
+    plot_columns = []
+    for algo in algos:
+        cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[f'tissue_{algo.method_key}'].value_counts(normalize=True).mul(100).rename(algo.filename)))
+        plot_columns.append(algo.filename)
+
+    cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
+    cummulative_df = cummulative_df.loc[sorted(cummulative_df.index.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
+
+    for i in range(number_of_rows * number_of_columns):
+        axes[i].yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+        axes[i].set_facecolor('white')
+        axes[i].set_title(plot_columns[i])
+        cummulative_df.plot(y=plot_columns[i], kind="bar", rot=0, ax=axes[i], xlabel="", color="grey", legend=False)
+        axes[i].grid(False)
+
+    for ax in axes:
+        ax.grid(False)
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, f'cluster_abundance_per_slice.png'))
     plt.close()
 
 @timeit
