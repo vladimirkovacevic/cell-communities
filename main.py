@@ -107,7 +107,8 @@ if __name__ == '__main__':
         # add algo object for each slice to a list
         algo_list.append(algo)
     
-    plot_all_annotation(args.out_path, algo_list)
+    if args.plotting > 1:
+        plot_all_annotation(args.out_path, algo_list)
 
     # MERGE TISSUE ANNDATA
     # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
