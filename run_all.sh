@@ -16,7 +16,7 @@ python main.py -f /goofys/Samples/slide_seq/mouse_testis/wt/WT3_ct.h5ad,/goofys/
 # 4. Mouse kidney - Figure 2
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8971939/
 # https://cellxgene.cziscience.com/collections/8e880741-bf9a-4c8e-9227-934204631d2a
-python main.py -f /goofys/Samples/slide_seq/cellxgene_kidney_slide_seq_v2/Puck_191204_15.h5ad,/goofys/Samples/slide_seq/cellxgene_kidney_slide_seq_v2/Puck_191204_22.h5ad -o /home/ubuntu/results/kidney -a author_cell_type --win_sizes 150 --sliding_steps 50 --resolution 0.3 --spot_size 20 resolution 0.4 --min_num_celltype 1 --min_perc_celltype 10 --min_cluster_size 100 --color_plot_system rgb --plotting 3 &
+python main.py -f /goofys/Samples/slide_seq/cellxgene_kidney_slide_seq_v2/Puck_191204_15.h5ad,/goofys/Samples/slide_seq/cellxgene_kidney_slide_seq_v2/Puck_191204_22.h5ad -o /home/ubuntu/results/kidney -a author_cell_type --win_sizes 150 --sliding_steps 50 --resolution 0.3 --spot_size 20 --min_num_celltype 1 --min_perc_celltype 10 --min_cluster_size 100 --color_plot_system rgb --plotting 3 &
 
 # 5. Mouse kidney - Figure 3
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8971939/
