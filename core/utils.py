@@ -2,6 +2,7 @@ from functools import wraps
 import time
 import seaborn as sns
 import scanpy as sc
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 import pandas as pd
 import os
@@ -28,12 +29,14 @@ def plot_all_annotation(out_path, algo_list):
     else:
         number_of_rows = 2 if number_of_samples % 2==0 else 1
         number_of_columns = number_of_samples // 2 if number_of_samples % 2==0 else number_of_samples
-    figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False)
+    figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
 
     i, j = 0, 0
     for algo in algo_list:
-        sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=axes[i, j], show=False, frameon=False, title=f'{algo.filename}')
+        sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=axes[i, j], show=False, frameon=False, title="")
         axes[i, j].get_legend().remove()
+        axes[i, j].set_title(f'{algo.filename}', fontsize=4, loc='center', wrap=True)
+
         i = i if j+1<number_of_columns else i+1
         j = j+1 if j+1<number_of_columns else 0
 
