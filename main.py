@@ -154,6 +154,10 @@ if __name__ == '__main__':
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
         cells_in_comm_per_slice[algo.filename] = algo.get_community_labels().value_counts(normalize=True).rename(algo.filename)
+    
+    if args.plotting > 0:
+        plot_all_clustering(args.out_path, algo_list)
+
     df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).T
     df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
     plot_cell_perc_in_community_per_slice(df, args.out_path)

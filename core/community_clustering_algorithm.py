@@ -61,7 +61,6 @@ class CommunityClusteringAlgo(ABC):
 
         set_cells = set(self.unique_cell_type).difference(set(tissue_palette.keys()))
         set_colors = set(cluster_palette).difference(set(tissue_palette.values()))
-
         for ct in set_cells:
             for clr in set_colors:
                 tissue_palette[ct] = clr
@@ -126,9 +125,9 @@ class CommunityClusteringAlgo(ABC):
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
         int_lab = np.sort([int(lab) for lab in labels])
-        palette = [cluster_palette[lab] for lab in int_lab]
-        palette.append('#CCCCCC')
-        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        self.palette = [cluster_palette[lab] for lab in int_lab]
+        self.palette.append('#CCCCCC')
+        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=self.palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 

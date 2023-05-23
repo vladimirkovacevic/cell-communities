@@ -19,9 +19,7 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-
-@timeit
-def plot_all_annotation(out_path, algo_list):
+def plot_all(out_path, algo_list, annotation, palette, img_name):
     number_of_samples = len(algo_list)
     if number_of_samples<=2:
         number_of_rows = 1
@@ -33,18 +31,23 @@ def plot_all_annotation(out_path, algo_list):
     axes_list = axes.flatten()
 
     for (algo, ax) in zip(algo_list, axes_list):
-        sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False, title=f'{algo.filename}')
+        sc.pl.spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False, title=f'{algo.filename}')
         ax.get_legend().remove()
         ax.set_title(f'{algo.filename}', fontsize=4, loc='center', wrap=True)
         h, l = ax.get_legend_handles_labels()
     figure.legend(h, l, bbox_to_anchor=(1.25, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., labelspacing=1)
-    figure.savefig(f'{out_path}/cell_type_per_slice.png', dpi=300, bbox_inches='tight')
+    figure.savefig(f'{out_path}/{img_name}', dpi=300, bbox_inches='tight')
     plt.close()
 
 
 @timeit
-def plot_all_cluster_label():
-    pass
+def plot_all_annotation(out_path, algo_list):
+    plot_all(out_path, algo_list, algo_list[0].annotation, algo_list[0].annotation_palette, img_name='cell_type_per_slice.png')
+    
+
+@timeit
+def plot_all_clustering(out_path, algo_list):
+    plot_all(out_path, algo_list, annotation=f'tissue_{algo_list[0].method_key}', palette=algo_list[0].palette, img_name='clustering_per_slice.png')
 
 
 @timeit
