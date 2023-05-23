@@ -38,13 +38,14 @@ def plot_all(out_path, algo_list, annotation, palette, img_name):
         ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
         hands, labs = ax.get_legend_handles_labels()
         for h, l in zip(hands, labs):
+            h._sizes = [11]
             if l not in h_d.values():
                 h_d[h] = l
     
     for h, l in h_d.items():
         handles.append(h) 
         labels.append(l)
-    figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., labelspacing=1)
+    figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., labelspacing=1, scatterpoints=10)
     figure.savefig(f'{out_path}/{img_name}', dpi=300, bbox_inches='tight')
     plt.close()
 
