@@ -8,8 +8,6 @@ import scanpy as sc
 import numpy as np
 import pandas as pd
 
-import matplotlib.pyplot as plt
-
 from core import *
 
 
@@ -42,10 +40,6 @@ if __name__ == '__main__':
     parser.add_argument('--color_plot_system', help='Color system for display of cluster specific windows.', type=str, required=False, default='hsv', choices={'hsv', 'rgb'})
     parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
     parser.add_argument('--min_count_per_type', help='Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages)', type=float, required=False, default=0.1)
-    parser.add_argument('--number_of_rows', help='Number of rows of the subplot grid in the figure of all samples.', type=int, required=False, default=1)
-    parser.add_argument('--number_of_columns', help='Number of columns of the subplot grid in the figure of all samples.', type=int, required=False, default=1)
-
-
 
     args = parser.parse_args()
 
@@ -67,12 +61,7 @@ if __name__ == '__main__':
     args.out_path = os.path.join(args.out_path, args.project_name)
     if not os.path.exists(args.out_path):
             os.mkdir(args.out_path)
-    
     tissue_palette = {}
-    
-    number_of_slices = len(args.files.split(','))
-    anno_figure, anno_ax = plt.subplots(nrows=args.number_of_rows, ncols=args.number_of_columns, squeeze=False)
-    i, j = 0, 0
     # FOR all slices
     for slice_id, file in enumerate(args.files.split(',')):
         # READ CELL TYPE ADATA
@@ -90,12 +79,7 @@ if __name__ == '__main__':
         algo = SlidingWindowMultipleSizes(adata, slice_id, file, tissue_palette, **vars(args))
         # plot original annotation
         if args.plotting > 1:
-            algo.plot_annotation(anno_ax[i, j])
-        
-        i = i+1
-        if i== args.number_of_rows:
-            i, j = 0, j+1
-        
+            algo.plot_annotation()
         # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness
         algo.run()
         if args.plotting > 1:
@@ -122,8 +106,8 @@ if __name__ == '__main__':
 
         # add algo object for each slice to a list
         algo_list.append(algo)
-
-    anno_figure.savefig(f'{args.out_path}/cell_type_per_slice.png', dpi=300, bbox_inches='tight')
+    
+    plot_all_annotation(args.out_path, algo_list)
 
     # MERGE TISSUE ANNDATA
     # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']

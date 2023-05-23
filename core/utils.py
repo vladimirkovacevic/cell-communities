@@ -18,6 +18,33 @@ def timeit(func):
         return result
     return timeit_wrapper
 
+
+@timeit
+def plot_all_annotation(out_path, algo_list):
+    number_of_samples = len(algo_list)
+    if number_of_samples<=2:
+        number_of_rows = 1
+        number_of_columns = number_of_samples
+    else:
+        number_of_rows = 2 if number_of_samples % 2==0 else 1
+        number_of_columns = number_of_samples // 2 if number_of_samples % 2==0 else number_of_samples
+    figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False)
+
+    i, j = 0, 0
+    for algo in algo_list:
+        sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=axes[i, j], show=False, frameon=False, title=f'{algo.filename}')
+        axes[i, j].get_legend().remove()
+        # i = i+1 if i+1<number_of_samples else 0
+        j = j+1 if j+1<number_of_samples else 0
+    figure.savefig(f'{out_path}/cell_type_per_slice.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
+
+@timeit
+def plot_all_cluster_label():
+    pass
+
+
 @timeit
 def plot_cell_perc_in_community_per_slice(df, path):
     sc.settings.set_figure_params(dpi=200, facecolor='white')

@@ -59,12 +59,9 @@ class CommunityClusteringAlgo(ABC):
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
 
-        #self.annotation_palette = list(self.adata.uns[f'{self.annotation}_colors']) if f'{self.annotation}_colors' in self.adata.uns else \
-        #    [cluster_palette[-x] for x in range(len(self.unique_cell_type))]
-
         for ct in self.unique_cell_type:
             if ct not in tissue_palette:
-                for clr in cluster_palette:
+                for clr in cluster_palette[::-1]:
                     if clr not in tissue_palette.values():
                         tissue_palette[ct] = clr
                         break
@@ -93,11 +90,9 @@ class CommunityClusteringAlgo(ABC):
         self.tissue.obs.loc[:, 'leiden'] = labels
 
     @timeit
-    def plot_annotation(self, anno_ax):
+    def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
         sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
-        sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=anno_ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}', )
-        anno_ax.get_legend().remove()
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -161,6 +156,11 @@ class CommunityClusteringAlgo(ABC):
             cell_type_dict = {ct:0 for ct in self.unique_cell_type}
             for cell in cluster_data[self.annotation]:
                 cell_type_dict[cell]+=1
+
+            # remove excluded cell types
+            cell_type_dict = {k:cell_type_dict[k] for k in self.tissue.var.index.sort_values()}
+            
+            # create a dictionary of cluster cell type distributions
             stats_table[label] = {k:cell_type_dict[k] for k in cell_type_dict}
 
         stats = pd.DataFrame(stats_table).T
