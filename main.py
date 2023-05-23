@@ -99,7 +99,7 @@ if __name__ == '__main__':
         # save a .csv file with metrics per cell type
         algo.save_metrics()
         # plot binary images of cell types spatial positions
-        if args.plotting > 4:
+        if args.plotting > 3:
             algo.plot_celltype_images()
         # filter the cell types which are not localized using calculated metrics (entropy and scatteredness)
         algo.cell_type_filtering()
@@ -150,7 +150,7 @@ if __name__ == '__main__':
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
 
-    if args.plotting > 1:
+    if args.plotting > 3:
         plot_cell_perc_in_community_per_slice(algo_list, args.out_path)
         plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list], args.out_path)
         plot_cell_abundance_total(algo_list, args.out_path)
