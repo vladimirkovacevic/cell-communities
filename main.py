@@ -150,12 +150,13 @@ if __name__ == '__main__':
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
 
-    if args.plotting > 3:
-        plot_cell_perc_in_community_per_slice(algo_list, args.out_path)
+    if args.plotting > 2:
         plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list], args.out_path)
         plot_cell_abundance_total(algo_list, args.out_path)
-        plot_cell_abundance_per_slice(algo_list, args.out_path)
         plot_cluster_abundance_total(algo_list, args.out_path)
+    if args.plotting > 3:
+        plot_cell_perc_in_community_per_slice(algo_list, args.out_path)
+        plot_cell_abundance_per_slice(algo_list, args.out_path)
         plot_cluster_abundance_per_slice(algo_list, args.out_path)
     end_time = time.perf_counter()
     total_time = end_time - start_time
