@@ -34,8 +34,9 @@ def plot_all_annotation(out_path, algo_list):
     for algo in algo_list:
         sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=axes[i, j], show=False, frameon=False, title=f'{algo.filename}')
         axes[i, j].get_legend().remove()
-        # i = i+1 if i+1<number_of_samples else 0
-        j = j+1 if j+1<number_of_samples else 0
+        i = i if j+1<number_of_columns else i+1
+        j = j+1 if j+1<number_of_columns else 0
+
     figure.savefig(f'{out_path}/cell_type_per_slice.png', dpi=300, bbox_inches='tight')
     plt.close()
 
