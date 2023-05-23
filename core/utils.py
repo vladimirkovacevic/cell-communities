@@ -30,16 +30,12 @@ def plot_all_annotation(out_path, algo_list):
         number_of_rows = 2 if number_of_samples % 2==0 else 1
         number_of_columns = number_of_samples // 2 if number_of_samples % 2==0 else number_of_samples
     figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
+    axes_list = axes.flatten()
 
-    i, j = 0, 0
-    for algo in algo_list:
-        sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=axes[i, j], show=False, frameon=False, title="")
-        axes[i, j].get_legend().remove()
-        axes[i, j].set_title(f'{algo.filename}', fontsize=4, loc='center', wrap=True)
-
-        i = i if j+1<number_of_columns else i+1
-        j = j+1 if j+1<number_of_columns else 0
-
+    for (algo, ax) in zip(algo_list, axes_list):
+        sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False, title="")
+        ax.get_legend().remove()
+        ax.set_title(f'{algo.filename}', fontsize=4, loc='center', wrap=True)
     figure.savefig(f'{out_path}/cell_type_per_slice.png', dpi=300, bbox_inches='tight')
     plt.close()
 
