@@ -32,7 +32,7 @@ def plot_celltype_mixtures_total(cell_mixtures, path):
         return { celltype: merge_dicts(dict1.get(celltype, {}), dict2.get(celltype, {})) for celltype in set(dict1) | set(dict2) }
 
     total_dict = reduce(merge_dicts_of_dicts, cell_mixtures)
-    total = pd.DataFrame(total_dict)
+    total = pd.DataFrame(total_dict).fillna(0)
 
     total['total_counts'] = np.array([sum(total.loc[row, :]) for row in total.index]).astype(int)
 
@@ -44,7 +44,7 @@ def plot_celltype_mixtures_total(cell_mixtures, path):
     total = total.loc[sorted(total.index.values, key=lambda x: float(x) if x != "total_cells" else float('inf'))]
 
     sc.settings.set_figure_params(dpi=300, facecolor='white')
-    sns.set(font_scale=1.5)
+    sns.set(font_scale=1)
 
     ncols = len(total.columns)
     fig, axes = plt.subplots(ncols=ncols, figsize=(15,15))
@@ -62,8 +62,9 @@ def plot_celltype_mixtures_total(cell_mixtures, path):
     for ax in axes:
         ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
         ax.xaxis.tick_top() 
-
-    plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'))
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'), bbox_inches='tight')
     plt.close()
 
 @timeit
@@ -78,7 +79,8 @@ def plot_cell_perc_in_community_per_slice(algos, path):
     ax = sns.heatmap(df, annot=True, fmt="4.0f", cmap="Greys", xticklabels=True, yticklabels=True, square=True, cbar=False)
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')
-    plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'))
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'), bbox_inches='tight')
     plt.close()
 
 @timeit
