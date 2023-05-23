@@ -59,12 +59,14 @@ class CommunityClusteringAlgo(ABC):
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
 
-        for ct in self.unique_cell_type:
-            if ct not in tissue_palette:
-                for clr in cluster_palette[::-1]:
-                    if clr not in tissue_palette.values():
-                        tissue_palette[ct] = clr
-                        break
+        set_cells = set(self.unique_cell_type).difference(set(tissue_palette.keys()))
+        set_colors = set(cluster_palette).difference(set(tissue_palette.values()))
+
+        for ct in set_cells:
+            for clr in set_colors:
+                tissue_palette[ct] = clr
+                set_colors.remove(clr)
+                break
         self.annotation_palette = {ct : tissue_palette[ct] for ct in self.unique_cell_type}
 
 
