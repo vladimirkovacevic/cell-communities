@@ -32,16 +32,12 @@ def plot_all_annotation(out_path, algo_list):
     figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
     axes_list = axes.flatten()
 
-    set_h = set()
-    set_l = set()
     for (algo, ax) in zip(algo_list, axes_list):
         sc.pl.spatial(algo.adata, color=[algo.annotation], palette=algo.annotation_palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False, title=f'{algo.filename}')
         ax.get_legend().remove()
         ax.set_title(f'{algo.filename}', fontsize=4, loc='center', wrap=True)
         h, l = ax.get_legend_handles_labels()
-        set_h = set_h | set(h)
-        set_l = set_l | set(l)
-    figure.legend(list(set_h), list(set_l), bbox_to_anchor=(1.05, 0), loc='center', fontsize=4, frameon=False, borderaxespad=0., labelspacing=1)
+    figure.legend(h, l, bbox_to_anchor=(1.25, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., labelspacing=1)
     figure.savefig(f'{out_path}/cell_type_per_slice.png', dpi=300, bbox_inches='tight')
     plt.close()
 
