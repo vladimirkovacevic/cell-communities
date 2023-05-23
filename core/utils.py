@@ -19,7 +19,8 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-def plot_all(out_path, algo_list, annotation, palette, img_name):
+def plot_all(out_path, algo_list, annotation, img_name, clustering=False):
+
     number_of_samples = len(algo_list)
     if number_of_samples<=2:
         number_of_rows = 1
@@ -33,6 +34,7 @@ def plot_all(out_path, algo_list, annotation, palette, img_name):
     h_d = {}
     handles, labels = [], []
     for (algo, ax) in zip(algo_list, axes_list):
+        palette = algo.palette if clustering else algo.annotation_palette
         sc.pl.spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False)
         ax.get_legend().remove()
         ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
@@ -52,12 +54,12 @@ def plot_all(out_path, algo_list, annotation, palette, img_name):
 
 @timeit
 def plot_all_annotation(out_path, algo_list):
-    plot_all(out_path, algo_list, algo_list[0].annotation, algo_list[0].annotation_palette, img_name='cell_type_per_slice.png')
+    plot_all(out_path, algo_list, algo_list[0].annotation, 'cell_type_per_slice.png')
     
 
 @timeit
 def plot_all_clustering(out_path, algo_list):
-    plot_all(out_path, algo_list, annotation=f'tissue_{algo_list[0].method_key}', palette=algo_list[0].palette, img_name='clustering_per_slice.png')
+    plot_all(out_path, algo_list, f'tissue_{algo_list[0].method_key}', 'clustering_per_slice.png', True)
 
 
 @timeit
