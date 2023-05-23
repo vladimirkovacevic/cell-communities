@@ -4,11 +4,11 @@ import scanpy as sc
 import pandas as pd
 import numpy as np
 import os
-import math
 import matplotlib.ticker as mtick
 
 from functools import wraps
 from functools import reduce
+from itertools import cycle
 from matplotlib import pyplot as plt
 
 
@@ -25,7 +25,7 @@ def timeit(func):
     return timeit_wrapper
 
 @timeit 
-def celltype_mixtures_total_plot(cell_mixtures, path):
+def plot_celltype_mixtures_total(cell_mixtures, path):
     def merge_dicts(dict1, dict2):
         return { cluster: dict1.get(cluster, 0) + dict2.get(cluster, 0) for cluster in set(dict1) | set(dict2) }
     def merge_dicts_of_dicts(dict1, dict2):
@@ -66,9 +66,11 @@ def celltype_mixtures_total_plot(cell_mixtures, path):
     plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'))
     plt.close()
 
-
 @timeit
-def plot_cell_perc_in_community_per_slice(df, path):
+def plot_cell_perc_in_community_per_slice(algos, path):
+    cells_in_comm_per_slice = {algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in algos}
+    df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
+    df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
     sc.settings.set_figure_params(dpi=200, facecolor='white')
     sns.set(font_scale=1.5)
     plt.figure(figsize=(15, 15))
@@ -85,6 +87,8 @@ def plot_cell_abundance_total(algos, path):
     fig.subplots_adjust(wspace=0)
     sc.settings.set_figure_params(dpi=300, facecolor='white')
 
+    greys=cycle(['darkgray','gray','dimgray','lightgray'])
+    colors = [next(greys) for _ in range(len(algos))]
     cell_percentage_dfs = []
     plot_columns = []
     for algo in algos:
@@ -103,7 +107,7 @@ def plot_cell_abundance_total(algos, path):
     plt.close()
 
 @timeit
-def cell_abundance_per_slice(algos, path):
+def plot_cell_abundance_per_slice(algos, path):
     # columns = rows = math.ceil(math.sqrt(len(samples)))
     # plt.figure(figsize=(10, 10))
     # for i in range(1, columns*rows +1):
@@ -114,19 +118,22 @@ def cell_abundance_per_slice(algos, path):
     pass
 
 @timeit 
-def cluster_abundance_total(algos, path):
+def plot_cluster_abundance_total(algos, path):
     fig, ax = plt.subplots(figsize=(20,10))
     fig.subplots_adjust(wspace=0)
     sc.settings.set_figure_params(dpi=300, facecolor='white')
 
+    greys=cycle(['darkgray','gray','dimgray','lightgray'])
+    colors = [next(greys) for _ in range(len(algos))]
     cell_percentage_dfs = []
     plot_columns = []
     for algo in algos:
-        cell_percentage_dfs.append(pd.DataFrame(algo.get_tissue().obs['leiden'].value_counts(normalize=True).mul(100).rename(algo.filename)))
+        cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[f'tissue_{algo.method_key}'].value_counts(normalize=True).mul(100).rename(algo.filename)))
         plot_columns.append(algo.filename)
 
-    cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0).reset_index()
-    cummulative_df.plot(x="index", y=plot_columns, kind="bar", rot=70, ax=ax, xlabel="")
+    cummulative_df = pd.concat(cell_percentage_dfs, axis=1).fillna(0)
+    cummulative_df = cummulative_df.loc[sorted(cummulative_df.index.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
+    cummulative_df.plot(y=plot_columns, kind="bar", rot=0, ax=ax, xlabel="", color=colors)
 
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
     ax.grid(False)
