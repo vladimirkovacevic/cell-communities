@@ -99,7 +99,7 @@ if __name__ == '__main__':
         # save a .csv file with metrics per cell type
         algo.save_metrics()
         # plot binary images of cell types spatial positions
-        if args.plotting > 2:
+        if args.plotting > 4:
             algo.plot_celltype_images()
         # filter the cell types which are not localized using calculated metrics (entropy and scatteredness)
         algo.cell_type_filtering()

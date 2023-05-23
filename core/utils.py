@@ -179,7 +179,7 @@ def plot_cluster_abundance_per_slice(algos, path):
     fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0)
-    sc.settings.set_figure_params(dpi=300, facecolor='white')
+    sc.settings.set_figure_params(dpi=100, facecolor='white')
 
     cell_percentage_dfs = []
     plot_columns = []
@@ -202,6 +202,9 @@ def plot_cluster_abundance_per_slice(algos, path):
     plt.tight_layout()
     plt.savefig(os.path.join(path, f'cluster_abundance_per_slice.png'))
     plt.close()
+
+def generate_html_report():
+    pass
 
 @timeit
 def calculate_something(num):
