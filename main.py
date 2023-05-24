@@ -106,7 +106,7 @@ if __name__ == '__main__':
         # add algo object for each slice to a list
         algo_list.append(algo)
     
-    if args.plotting > 1:
+    if args.plotting > 0:
         plot_all_annotation(args.out_path, algo_list)
 
     # MERGE TISSUE ANNDATA

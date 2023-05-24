@@ -19,7 +19,7 @@ def timeit(func):
         return result
     return timeit_wrapper
 
-def plot_all(out_path, algo_list, annotation, img_name, clustering=False):
+def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False):
     number_of_samples = len(algo_list)
     number_of_rows = 2 if number_of_samples%2==0 and number_of_samples>2 else 1
     number_of_columns = (number_of_samples // 2) if number_of_samples % 2==0 and number_of_samples>2 else number_of_samples
@@ -44,18 +44,18 @@ def plot_all(out_path, algo_list, annotation, img_name, clustering=False):
         labels.append(l)
     legend_ncols = 1 if len(labels)<=12 else 2
     figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncols=legend_ncols, labelspacing=1, scatterpoints=10)
-    figure.savefig(f'{out_path}/{img_name}', dpi=300, bbox_inches='tight')
+    figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
     plt.close()
 
 
 @timeit
 def plot_all_annotation(out_path, algo_list):
-    plot_all(out_path, algo_list, algo_list[0].annotation, 'cell_type_per_slice.png')
+    plot_all_slices(out_path, algo_list, algo_list[0].annotation, 'cell_type_per_slice.png')
     
 
 @timeit
 def plot_all_clustering(out_path, algo_list):
-    plot_all(out_path, algo_list, f'tissue_{algo_list[0].method_key}', 'clustering_per_slice.png', True)
+    plot_all_slices(out_path, algo_list, f'tissue_{algo_list[0].method_key}', 'clustering_per_slice.png', True)
 
 
 @timeit
