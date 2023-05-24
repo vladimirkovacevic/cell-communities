@@ -44,7 +44,7 @@ def plot_celltype_mixtures_total(cell_mixtures, path):
     total = total.loc[sorted(total.index.values, key=lambda x: float(x) if x != "total_cells" else float('inf'))]
 
     sc.settings.set_figure_params(dpi=300, facecolor='white')
-    sns.set(font_scale=1)
+    sns.set(font_scale=1.5)
 
     ncols = len(total.columns)
     fig, axes = plt.subplots(ncols=ncols, figsize=(15,15))

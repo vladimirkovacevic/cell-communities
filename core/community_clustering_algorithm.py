@@ -198,7 +198,7 @@ class CommunityClusteringAlgo(ABC):
     def plot_stats(self):
         stats = self.tissue.uns['cell mixtures stats']
         sc.settings.set_figure_params(dpi=300, facecolor='white')
-        sns.set(font_scale=1)
+        sns.set(font_scale=1.5)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
         fig, axes = plt.subplots(ncols=ncols, figsize=(15,15))
@@ -371,7 +371,7 @@ class CommunityClusteringAlgo(ABC):
     @timeit
     def plot_celltype_table(self):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
-        sns.set(font_scale=1)
+        sns.set(font_scale=1.5)
 
         stats = self.tissue.uns['cell mixtures'].copy()
 

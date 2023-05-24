@@ -158,6 +158,8 @@ if __name__ == '__main__':
         plot_cell_perc_in_community_per_slice(algo_list, args.out_path)
         plot_cell_abundance_per_slice(algo_list, args.out_path)
         plot_cluster_abundance_per_slice(algo_list, args.out_path)
+
+    generate_report(args, algo_list)
     end_time = time.perf_counter()
     total_time = end_time - start_time
     print(f'main.py took {total_time:.4f}s')
