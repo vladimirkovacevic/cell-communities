@@ -35,7 +35,7 @@ cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c56
                   '#240046', '#0a0908', '#C32148', '#98f5e1']                  
                   
 class CommunityClusteringAlgo(ABC):
-    def __init__(self, adata, slice_id, input_file_path, tissue_palette, **params):
+    def __init__(self, adata, slice_id, input_file_path, **params):
         sc.settings.verbosity = 3 if params['verbose'] else params['verbose']
         sc.settings.set_figure_params(dpi=300, facecolor='white')
         self.adata = adata
@@ -59,14 +59,7 @@ class CommunityClusteringAlgo(ABC):
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
 
-        set_cells = set(self.unique_cell_type).difference(set(tissue_palette.keys()))
-        set_colors = set(cluster_palette).difference(set(tissue_palette.values()))
-        for ct in set_cells:
-            for clr in set_colors:
-                tissue_palette[ct] = clr
-                set_colors.remove(clr)
-                break
-        self.annotation_palette = {ct : tissue_palette[ct] for ct in self.unique_cell_type}
+        self.annotation_palette = {ct : self.adata.uns[f'{self.annotation}_colors'][i] for i, ct in enumerate(self.unique_cell_type)}
 
 
     @abstractmethod
@@ -93,7 +86,7 @@ class CommunityClusteringAlgo(ABC):
     @timeit
     def plot_annotation(self):
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        sc.pl.spatial(self.adata, color=[self.annotation], palette=self.annotation_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        sc.pl.spatial(self.adata, color=[self.annotation], spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
         plt.close()
 
@@ -125,9 +118,9 @@ class CommunityClusteringAlgo(ABC):
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
         int_lab = np.sort([int(lab) for lab in labels])
-        self.palette = [cluster_palette[lab] for lab in int_lab]
-        self.palette.append('#CCCCCC')
-        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=self.palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        self.cluster_palette = [cluster_palette[lab] for lab in int_lab]
+        self.cluster_palette.append('#CCCCCC')
+        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 

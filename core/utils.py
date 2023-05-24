@@ -20,21 +20,16 @@ def timeit(func):
     return timeit_wrapper
 
 def plot_all(out_path, algo_list, annotation, img_name, clustering=False):
-
     number_of_samples = len(algo_list)
-    if number_of_samples<=2:
-        number_of_rows = 1
-        number_of_columns = number_of_samples
-    else:
-        number_of_rows = 2 if number_of_samples % 2==0 else 1
-        number_of_columns = (number_of_samples // 2) if number_of_samples % 2==0 else number_of_samples
+    number_of_rows = 2 if number_of_samples%2==0 and number_of_samples>2 else 1
+    number_of_columns = (number_of_samples // 2) if number_of_samples % 2==0 and number_of_samples>2 else number_of_samples
+
     figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
-    
     axes_list = axes.flatten()
     h_d = {}
     handles, labels = [], []
     for (algo, ax) in zip(algo_list, axes_list):
-        palette = algo.palette if clustering else algo.annotation_palette
+        palette = algo.cluster_palette if clustering else algo.annotation_palette
         sc.pl.spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False)
         ax.get_legend().remove()
         ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
@@ -47,7 +42,8 @@ def plot_all(out_path, algo_list, annotation, img_name, clustering=False):
     for h, l in h_d.items():
         handles.append(h) 
         labels.append(l)
-    figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., labelspacing=1, scatterpoints=10)
+    legend_ncols = 1 if len(labels)<=12 else 2
+    figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncols=legend_ncols, labelspacing=1, scatterpoints=10)
     figure.savefig(f'{out_path}/{img_name}', dpi=300, bbox_inches='tight')
     plt.close()
 

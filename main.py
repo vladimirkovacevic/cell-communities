@@ -61,7 +61,6 @@ if __name__ == '__main__':
     args.out_path = os.path.join(args.out_path, args.project_name)
     if not os.path.exists(args.out_path):
             os.mkdir(args.out_path)
-    tissue_palette = {}
     # FOR all slices
     for slice_id, file in enumerate(args.files.split(',')):
         # READ CELL TYPE ADATA
@@ -76,7 +75,7 @@ if __name__ == '__main__':
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
         # FEATURE EXTRACTION (SLIDING_WINDOW)
-        algo = SlidingWindowMultipleSizes(adata, slice_id, file, tissue_palette, **vars(args))
+        algo = SlidingWindowMultipleSizes(adata, slice_id, file, **vars(args))
         # plot original annotation
         if args.plotting > 1:
             algo.plot_annotation()
