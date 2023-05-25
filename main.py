@@ -41,7 +41,6 @@ if __name__ == '__main__':
     parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
     parser.add_argument('--min_count_per_type', help='Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages)', type=float, required=False, default=0.1)
 
-
     args = parser.parse_args()
 
     if args.verbose == 0:
@@ -71,7 +70,7 @@ if __name__ == '__main__':
             if 'X_spatial' in adata.obsm:
                 adata.obsm['spatial'] = adata.obsm['X_spatial'].copy()
             elif 'spatial_stereoseq' in adata.obsm:
-                adata.obsm['spatial'] = adata.obsm['spatial_stereoseq'].copy()
+                adata.obsm['spatial'] = np.array(adata.obsm['spatial_stereoseq'].copy())
         else:
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
@@ -106,6 +105,9 @@ if __name__ == '__main__':
 
         # add algo object for each slice to a list
         algo_list.append(algo)
+    
+    if args.plotting > 0:
+        plot_all_annotation(args.out_path, algo_list)
 
     # MERGE TISSUE ANNDATA
     # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
@@ -149,7 +151,9 @@ if __name__ == '__main__':
                 algo.colorplot_stats(color_system=args.color_plot_system)
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
-
+    
+    if args.plotting > 0:
+        plot_all_clustering(args.out_path, algo_list)
     if args.plotting > 2:
         plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list], args.out_path)
         plot_cell_abundance_total(algo_list, args.out_path)
@@ -158,6 +162,7 @@ if __name__ == '__main__':
         plot_cell_perc_in_community_per_slice(algo_list, args.out_path)
         plot_cell_abundance_per_slice(algo_list, args.out_path)
         plot_cluster_abundance_per_slice(algo_list, args.out_path)
+
     end_time = time.perf_counter()
     total_time = end_time - start_time
     print(f'main.py took {total_time:.4f}s')
