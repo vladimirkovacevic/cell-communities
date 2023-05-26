@@ -1,8 +1,6 @@
 import time
 import seaborn as sns
 import scanpy as sc
-import matplotlib as mpl
-from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import os
@@ -12,7 +10,6 @@ from functools import wraps
 from functools import reduce
 from itertools import cycle
 from matplotlib import pyplot as plt
-
 
 
 def timeit(func):
@@ -25,7 +22,6 @@ def timeit(func):
         print(f'Function {func.__name__} took {total_time:.4f}s')
         return result
     return timeit_wrapper
-
 
 def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False):
     number_of_samples = len(algo_list)
@@ -55,16 +51,13 @@ def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False)
     figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
     plt.close()
 
-
 @timeit
 def plot_all_annotation(out_path, algo_list):
     plot_all_slices(out_path, algo_list, algo_list[0].annotation, 'cell_type_per_slice.png')
-    
 
 @timeit
 def plot_all_clustering(out_path, algo_list):
     plot_all_slices(out_path, algo_list, f'tissue_{algo_list[0].method_key}', 'clustering_per_slice.png', True)
-
 
 @timeit 
 def plot_celltype_mixtures_total(cell_mixtures, path):
@@ -89,7 +82,7 @@ def plot_celltype_mixtures_total(cell_mixtures, path):
     sns.set(font_scale=1.5)
 
     ncols = len(total.columns)
-    fig, axes = plt.subplots(ncols=ncols, figsize=(15,15))
+    fig, axes = plt.subplots(ncols=ncols, figsize=(20,15))
     fig.subplots_adjust(wspace=0)
 
     vmax_perc = np.max(np.ravel(total.iloc[:-1,:-2]))
@@ -108,7 +101,6 @@ def plot_celltype_mixtures_total(cell_mixtures, path):
     plt.tight_layout()
     plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'), bbox_inches='tight')
     plt.close()
-
 
 @timeit
 def plot_cell_perc_in_community_per_slice(algos, path):
@@ -247,9 +239,6 @@ def plot_cluster_abundance_per_slice(algos, path):
     plt.tight_layout()
     plt.savefig(os.path.join(path, f'cluster_abundance_per_slice.png'))
     plt.close()
-
-def generate_html_report():
-    pass
 
 @timeit
 def calculate_something(num):
