@@ -25,7 +25,7 @@ python main.py -f /goofys/Samples/slide_seq/cellxgene_kidney_slide_seq_v2/Puck_1
 
 # 6. Carcinoma - tumor, normal, border
 # https://www.biorxiv.org/content/10.1101/2021.10.21.465135v1.full
-python main.py -f /goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-M_DU3_web3_bin35_CelltypeTrans_MaligComb_Spotlight_First.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-P_FE2_web0_bin50_CelltypeTrans_MaligComb_Spotlight_First.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-T_FD4_web2_bin50_CelltypeTrans_MaligComb_Spotlight_First.h5ad -o results/carcinoma -a cell_type --win_sizes 9 --sliding_steps 3 --resolution 0.05 --spot_size 1.5 --plotting 3 &
+python main.py -f /goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-M_DU3.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-P_FE2.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-T_FD4.h5ad -o results/carcinoma -a cell_type --win_sizes 9 --sliding_steps 3 --resolution 0.05 --spot_size 1.5 --plotting 3 &
 
 
 wait
