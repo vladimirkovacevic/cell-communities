@@ -33,10 +33,8 @@ def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False)
     number_of_columns = (number_of_samples // 2) if number_of_samples % 2==0 and number_of_samples>2 else number_of_samples
 
     figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
-    axes_list = axes.flatten()
     h_d = {}
-    handles, labels = [], []
-    for (algo, ax) in zip(algo_list, axes_list):
+    for (algo, ax) in zip(algo_list, axes.flatten()):
         palette = algo.cluster_palette if clustering else algo.annotation_palette
         sc.pl.spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False)
         ax.get_legend().remove()
@@ -47,11 +45,10 @@ def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False)
             if l not in h_d.values():
                 h_d[h] = l
     
-    for h, l in h_d.items():
-        handles.append(h) 
-        labels.append(l)
-    legend_ncols = 1 if len(labels)<=12 else 2
-    figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
+    handles = np.array([[h, l] for (h, l) in h_d.items()])
+    handles = handles[handles[:, 1].argsort()]
+    legend_ncols = 1 if len(handles)<=12 else 2
+    figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
     figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
     plt.close()
 
