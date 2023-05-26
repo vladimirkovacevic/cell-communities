@@ -51,7 +51,7 @@ def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False)
         handles.append(h) 
         labels.append(l)
     legend_ncols = 1 if len(labels)<=12 else 2
-    figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncols=legend_ncols, labelspacing=1, scatterpoints=10)
+    figure.legend(handles, labels, bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
     figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
     plt.close()
 
