@@ -198,7 +198,7 @@ class CommunityClusteringAlgo(ABC):
     def plot_stats(self):
         stats = self.tissue.uns['cell mixtures stats']
         sc.settings.set_figure_params(dpi=300, facecolor='white')
-        sns.set(font_scale=1)
+        sns.set(font_scale=1.5)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
         fig, axes = plt.subplots(ncols=ncols, figsize=(15,15))
@@ -247,11 +247,11 @@ class CommunityClusteringAlgo(ABC):
                 fig.subplots_adjust(wspace=0.35)
 
                 sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, palette=self.annotation_palette, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
-                ax[0].set_title(f'cell types')
+                ax[0].set_title(f'Cell types')
                 ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 
                 sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette=[cluster_palette[int(cluster[0])]], spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
-                ax[1].set_title(f'cell community')
+                ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
                 ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
 
@@ -294,7 +294,7 @@ class CommunityClusteringAlgo(ABC):
                 plt.close()
 
     @timeit
-    def colorplot_stats(self, color_system='hsv'):
+    def colorplot_stats(self, color_system='rgb'):
         supported_color_systems = ['hsv', 'rgb']
         if color_system in supported_color_systems:
             stats = self.tissue.uns['cell mixtures'].copy()
@@ -352,7 +352,7 @@ class CommunityClusteringAlgo(ABC):
                         plt.imshow(rgba_image, zorder=2)
                         plt.axis('off')
                         ax.grid(visible=False)
-                        ax.set_title(f'{color_system} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
+                        ax.set_title(f'{color_system.upper()} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
                         
                         if color_system == 'hsv':
                             plane_names = ['H\'', 'S\'', 'V\'']
@@ -371,7 +371,7 @@ class CommunityClusteringAlgo(ABC):
     @timeit
     def plot_celltype_table(self):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
-        sns.set(font_scale=1)
+        sns.set(font_scale=1.5)
 
         stats = self.tissue.uns['cell mixtures'].copy()
 

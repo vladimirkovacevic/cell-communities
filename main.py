@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--min_num_celltype', help='Minimum number of cell types that have more than --min_perc_celltype in a cluster, for a cluster to be shown in plot_celltype_table()', type=int, required=False, default=2)
     parser.add_argument('--min_perc_celltype', help='Minimum percentage of cells of a cell type which at least min_num_celltype cell types need to have to show a cluster in plot_celltype_table()', type=int, required=False, default=15)
     parser.add_argument('--min_cells_coeff', help='Multiple od standard deviations from mean values where the cutoff for m', type=float, required=False, default=1.5)
-    parser.add_argument('--color_plot_system', help='Color system for display of cluster specific windows.', type=str, required=False, default='hsv', choices={'hsv', 'rgb'})
+    parser.add_argument('--color_plot_system', help='Color system for display of cluster specific windows.', type=str, required=False, default='rgb', choices={'hsv', 'rgb'})
     parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
     parser.add_argument('--min_count_per_type', help='Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages)', type=float, required=False, default=0.1)
 
@@ -57,6 +57,8 @@ if __name__ == '__main__':
     algo_list = []
     tissue_list = []
     win_sizes = "_".join([i for i in args.win_sizes.split(',')])
+    args.project_name_orig = args.project_name
+    args.out_path_orig = args.out_path
     args.project_name += f"_r{args.resolution}_ws{win_sizes}_en{args.entropy_thres}_sct{args.scatter_thres}_dwr{args.downsample_rate}_mcc{args.min_cells_coeff}"
     args.out_path = os.path.join(args.out_path, args.project_name)
     if not os.path.exists(args.out_path):
@@ -148,6 +150,7 @@ if __name__ == '__main__':
                 algo.plot_celltype_table()
             if args.plotting > 2:
                 algo.plot_cluster_mixtures()
+                algo.boxplot_stats()
                 algo.colorplot_stats(color_system=args.color_plot_system)
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
@@ -163,6 +166,7 @@ if __name__ == '__main__':
         plot_cell_abundance_per_slice(algo_list, args.out_path)
         plot_cluster_abundance_per_slice(algo_list, args.out_path)
 
+    generate_report(args)
     end_time = time.perf_counter()
     total_time = end_time - start_time
     print(f'main.py took {total_time:.4f}s')
