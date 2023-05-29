@@ -102,9 +102,8 @@ def get_css():
     '''
 
 def all_slices_get_figure(project_root, figure_name, plotting_level):
-    if plotting_level == 0:
-        return
-    return get_base64_encoded_img(f"{project_root}/{figure_name}") if os.path.isfile(f"{project_root}/{figure_name}") else ""
+    if plotting_level > 0:
+        return get_base64_encoded_img(f"{project_root}/{figure_name}") if os.path.isfile(f"{project_root}/{figure_name}") else ""
 
 def per_slice_content(path, plotting_level):
     content = ""
