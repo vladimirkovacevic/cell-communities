@@ -199,7 +199,7 @@ def plot_cluster_abundance_total(algos, path):
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
     ax.grid(False)
     ax.set_facecolor('white')
-    plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
+    ax.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
     plt.tight_layout()
     plt.savefig(os.path.join(path, f'cluster_abundance_all_slices.png'))
     plt.close()

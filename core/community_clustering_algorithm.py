@@ -423,6 +423,23 @@ class CommunityClusteringAlgo(ABC):
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
 
+    @timeit 
+    def plot_stacked_celltype_per_community(self):
+        sc.settings.set_figure_params(dpi=200, facecolor='white')
+        fig, ax = plt.subplots(figsize=(15,10))
+        stats = self.tissue.uns['cell mixtures']
+
+        stats = stats.apply(lambda x: x / x.sum() * 100, axis=1)
+        stats.plot.bar(stacked=True, ax=ax, rot=0)
+        ax.grid(False)
+        ax.set_facecolor('white')
+        plt.yticks([])
+        plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.dir_path, f'cmixtures_stacked_barplot_{self.params_suffix}.png'))
+        plt.close()
+
     def save_metrics(self):
         # save metrics results in csv format
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))

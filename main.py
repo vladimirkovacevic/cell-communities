@@ -150,6 +150,7 @@ if __name__ == '__main__':
                 algo.plot_celltype_table()
             if args.plotting > 2:
                 algo.plot_cluster_mixtures()
+                algo.plot_stacked_celltype_per_community()
                 algo.boxplot_stats()
                 algo.colorplot_stats(color_system=args.color_plot_system)
             # save final tissue with stats
