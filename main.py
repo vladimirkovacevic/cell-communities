@@ -152,6 +152,7 @@ if __name__ == '__main__':
                 algo.plot_cluster_mixtures()
                 algo.boxplot_stats()
                 algo.colorplot_stats(color_system=args.color_plot_system)
+                algo.colorplot_stats_per_cell_types()
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
     
