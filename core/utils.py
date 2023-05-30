@@ -207,13 +207,13 @@ def plot_cluster_abundance_total(algos, path):
 @timeit
 def plot_cluster_abundance_per_slice(algos, path):
     number_of_samples = len(algos)
-    if number_of_samples<=2:
+    if number_of_samples <= 2:
         number_of_rows = 1
         number_of_columns = number_of_samples
     else:
         number_of_rows = 2 if number_of_samples % 2 == 0 else 1
         number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-    fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10))
+    fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20, 10))
     axes = axes.ravel()
     fig.subplots_adjust(wspace=0)
     sc.settings.set_figure_params(dpi=100, facecolor='white')

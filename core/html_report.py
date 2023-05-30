@@ -4,11 +4,12 @@ import subprocess
 
 from collections import defaultdict
 from .utils import timeit
+from pathlib import Path
 
 
-BOXPLT_C_INDEX = 9
-COLORPLT_C_INDEX = 15
-CMIXT_C_INDEX = -5
+BOXPLT_C_INDEX = 1
+COLORPLT_C_INDEX = 2
+CMIXT_C_INDEX = -1
 
 def get_base64_encoded_img(path):
     data_uri = base64.b64encode(open(path, 'rb').read()).decode('utf-8')
@@ -154,21 +155,24 @@ def per_community_content(path, plotting_level):
         for name in dirs:
             slice_path = os.path.join(path, name)
             for file in os.listdir(slice_path):
-                if file.startswith("boxplot"):      
-                    boxplots_dict[file[BOXPLT_C_INDEX]].append(os.path.join(slice_path, file))
+                if file.startswith("boxplot"):
+                    cluster = int(Path(file).stem.split("_")[BOXPLT_C_INDEX][1:])
+                    boxplots_dict[cluster].append(os.path.join(slice_path, file))
                 if file.startswith("cmixtures"):
-                    cmixtures_dict[file[CMIXT_C_INDEX]].append(os.path.join(slice_path, file))
+                    cluster = int(Path(file).stem.split("_")[CMIXT_C_INDEX][1:])
+                    cmixtures_dict[cluster].append(os.path.join(slice_path, file))
                 if file.startswith("colorplot"):
-                    colorplot_dict[file[COLORPLT_C_INDEX]].append(os.path.join(slice_path, file))
+                    cluster = int(Path(file).stem.split("_")[COLORPLT_C_INDEX][1:])
+                    colorplot_dict[cluster].append(os.path.join(slice_path, file))
     
-    content += make_table(cmixtures_dict, 2, "Cell types that are present in each community") #TODO if needed additional comments what these plots represent
-    content += make_table(boxplots_dict, 2, "Boxplots of cell types that are present in each community")
-    content += make_table(colorplot_dict, 2, "RGB Colorplots")
+    content += make_table(cmixtures_dict, columns=2, comment="Cell types that are present in each community")
+    content += make_table(boxplots_dict, columns=2, comment="Boxplots of cell types that are present in each community")
+    content += make_table(colorplot_dict, columns=2, comment="RGB Colorplots")
     return content
 
 def make_table(plot_dict, columns, comment):
     content = ""
-    for _, plots in plot_dict.items():
+    for _, plots in sorted(plot_dict.items()):
         rows = ""
         plots = [f'<td class="shrink"><img src={get_base64_encoded_img(plot)}></td>' for plot in plots]
         for i in range(0,len(plots),columns):
@@ -180,7 +184,7 @@ def make_table(plot_dict, columns, comment):
             {rows}
             </tbody>
         </table>
-        <hr>
+        <br>
         '''
 
     return f'''
@@ -193,6 +197,7 @@ def make_table(plot_dict, columns, comment):
         </table>
         {content}
         <hr>
+        <br>
     '''
 
 @timeit
