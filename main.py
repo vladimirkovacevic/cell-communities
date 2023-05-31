@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import time
 
@@ -16,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--tfile', help='File path to Anndata object with calculated cell mixtures for data windows, output of calc_feature_matrix', type=str, required=False, default=None)
     parser.add_argument('-a', '--annotation', help='Annotation label for cell types', type=str, required=True)
     parser.add_argument('-o', '--out_path', help='Absolute path to store outputs', type=str, default='results')
+    parser.add_argument('-c', '--cluster_algo', help='Clustering algorithm', type=str, required=False, default='leiden', choices={'leiden'})
     parser.add_argument('-r', '--resolution', help='All: Resolution of the clustering algorithm', type=float, required=False, default=0.2)
     parser.add_argument('-s', '--spot_size', help='Size of the spot on plot', type=float, required=False, default=30)
     parser.add_argument('-v', '--verbose', help='Show logging messages. 0 - Show warrnings, >0 show info, <0 no output generated.', type=int, default=0)

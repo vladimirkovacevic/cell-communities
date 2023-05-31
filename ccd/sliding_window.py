@@ -152,8 +152,8 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         This method defines the subwindow cluster label based on the labels of all overlapping windows. It goes through
         all subwindow positions and gathers clustering labels of all windows that contain it. The final label of the
-        subwindow is determined by majority vote. Window cluster labels are stored in `self.tissue_pruned.obs['leiden']`,
-        and the subwindow labels are placed in `self.tissue.obs['leiden_max_vote']`. The `self.tissue_pruned` object is
+        subwindow is determined by majority vote. Window cluster labels are stored in `self.tissue_pruned.obs[self.cluster_algo]`,
+        and the subwindow labels are placed in `self.tissue.obs[self.cluster_algo + '_max_vote']`. The `self.tissue_pruned` object is
         used only for clustering and is discarded.
 
         Parameters:
@@ -170,7 +170,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         # max voting on cluster labels
         subwindow_locations = np.unique(self.adata.obs['window_spatial'])
         # variable for final subwindow labels
-        leiden_max_vote = pd.Series(index=subwindow_locations, name='leiden_max_vote', dtype=np.float64)
+        cluster_max_vote = pd.Series(index=subwindow_locations, name=f'{self.cluster_algo}_max_vote', dtype=np.float64)
         for location in subwindow_locations:
             # extract x,y,z coordinates from location string
             x_curr, y_curr, z_curr, _ = np.array(location.split("_")).astype(int)
@@ -180,16 +180,16 @@ class SlidingWindow(CommunityClusteringAlgo):
                 for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
                     # check if location exist (spatial area is not complete)
                     if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
-                        new_value = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
+                        new_value = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', self.cluster_algo]
                         subwindow_labels[new_value] = subwindow_labels[new_value] + 1 if new_value in subwindow_labels.keys() else 1
             
             # MAX VOTE
             # max vote is saved in a new variable (not changed in tissue.obs) so that it does not have diagonal effect on other labels during refinement
-            # max_voting result is created for each subwindow, while the 'leiden' clustering was defined for each window
-            leiden_max_vote.loc[location] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else 'unknown'
+            # max_voting result is created for each subwindow, while the self.cluster_algo clustering was defined for each window
+            cluster_max_vote.loc[location] = max(subwindow_labels, key=subwindow_labels.get) if subwindow_labels!={} else 'unknown'
 
         # copy clustering results from subwindows to cells of those subwindows in adata object
-        self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(leiden_max_vote.loc[self.adata.obs['window_spatial']])
+        self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(cluster_max_vote.loc[self.adata.obs['window_spatial']])
         self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
         logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
@@ -289,7 +289,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                         for slide_y in range(0, np.min([bin_slide_ratio, y_curr - y_min + 1])):
                             # check if location exist (spatial area is not complete)
                             if (f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}') in self.tissue.obs.index:
-                                win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', 'leiden']
+                                win_label = self.tissue.obs.loc[f'{x_curr - slide_x}_{y_curr - slide_y}_{z_curr}_{win_size}', self.cluster_algo]
                                 cell_labels[win_label] += 1
 
                     cache[(x_curr, y_curr, z_curr, w_size)] = cell_labels
