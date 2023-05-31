@@ -27,5 +27,4 @@ python main.py -f /goofys/Samples/slide_seq/cellxgene_kidney_slide_seq_v2/Puck_1
 # https://www.biorxiv.org/content/10.1101/2021.10.21.465135v1.full
 python main.py -f /goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-P_FE2.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-M_DU3.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-T_FD4.h5ad -o results/carcinoma -a cell_type --win_sizes 12 --sliding_steps 6 --resolution 0.1 --spot_size 1.5 --plotting 4 --downsample_rate 1 --min_cells_coeff 1 --min_num_celltype 1 --min_perc_celltype 10 --min_perc_to_show 8 --min_cluster_size 200 &
 
-
 wait

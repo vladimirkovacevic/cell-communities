@@ -109,7 +109,7 @@ if __name__ == '__main__':
         # add algo object for each slice to a list
         algo_list.append(algo)
     
-    if args.plotting > 0:
+    if args.plotting > 0 and len(algo_list)>1:
         plot_all_annotation(args.out_path, algo_list)
 
     # MERGE TISSUE ANNDATA
@@ -153,10 +153,12 @@ if __name__ == '__main__':
                 algo.plot_cluster_mixtures()
                 algo.boxplot_stats()
                 algo.colorplot_stats(color_system=args.color_plot_system)
+            if args.plotting > 3:
+                algo.colorplot_stats_per_cell_types()
             # save final tissue with stats
             algo.save_tissue(suffix='_stats')
     
-    if args.plotting > 0:
+    if args.plotting > 0 and len(algo_list)>1:
         plot_all_clustering(args.out_path, algo_list)
     if args.plotting > 2:
         plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list], args.out_path)

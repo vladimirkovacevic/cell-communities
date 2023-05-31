@@ -370,6 +370,41 @@ class CommunityClusteringAlgo(ABC):
         else:
             logging.warn(f'Unsupported color system: {color_system}.')
 
+
+    @timeit
+    def colorplot_stats_per_cell_types(self):
+        color_system='rgb'
+        cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
+        cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
+        cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
+        cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
+
+        for window_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
+            windows_mixture = self.tissue[self.tissue.obsm['spatial'][:,3] == window_size]
+            data_df = pd.DataFrame(windows_mixture.X/self.total_cell_norm, columns=windows_mixture.var.index, index=windows_mixture.obs.index)
+            rgb_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
+            
+            for cell_type in self.tissue.var.index:
+                for window in data_df.iterrows():
+                    wx = int(window[0].split("_")[0])
+                    wy = int(window[0].split("_")[1])
+                    rgb_image[int(wy*sliding_step-cy_min) : int(wy*sliding_step + window_size-cy_min), int(wx*sliding_step-cx_min) : int(wx*sliding_step + window_size-cx_min), :] = [window[1][cell_type], 0.5, 0.5]
+                
+                fig, ax = plt.subplots(nrows=1, ncols=1)
+                plt.scatter(x = self.adata.obsm['spatial'][:,0]-cx_min, y=self.adata.obsm['spatial'][:,1]-cy_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
+                
+                window_mask = rgb_image[:,:,0] != 0
+                window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
+                rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
+                        
+                plt.imshow(rgba_image, zorder=2)
+                plt.axis('off')
+                ax.grid(visible=False)
+                ax.set_title(f'Percentage of {cell_type} (red channel of RGB) in:\n{self.adata.uns["sample_name"]}, win size {window_size}, step {sliding_step}')  
+                fig.savefig(os.path.join(self.dir_path, f'ct_colorplot_rgb_{cell_type}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=200)
+                plt.close()
+    
+
     @timeit
     def plot_celltype_table(self):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
