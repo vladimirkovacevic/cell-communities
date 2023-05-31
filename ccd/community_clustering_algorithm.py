@@ -137,7 +137,8 @@ class CommunityClusteringAlgo(ABC):
         - labels (pandas.Series): The clustering labels.
 
         """
-        self.tissue.obs.loc[:, 'leiden'] = labels
+        self.tissue.obs.loc[:, self.cluster_algo] = labels
+
 
     @timeit
     def plot_annotation(self):
@@ -209,9 +210,9 @@ class CommunityClusteringAlgo(ABC):
         """
 
         # # plot initial clustering for each window
-        # sc.pl.spatial(self.tissue, color='leiden', spot_size=1)
+        # sc.pl.spatial(self.tissue, color=self.cluster_algo, spot_size=1)
         # # plot clustering after majority voting for each subwindow
-        # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)    
+        # sc.pl.spatial(self.tissue, color='f'{self.cluster_algo}_max_vote', spot_size=1)    
         figure, ax = plt.subplots(figsize=(15, 15))
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
@@ -243,7 +244,7 @@ class CommunityClusteringAlgo(ABC):
         Row of total cell type count is added. DataFrame with additional columns and row is saved in adata.uns['cell mixture stats']
         """
 
-        # extract information on leiden clustering labels and cell types to create cell communities statistics
+        # extract information on self.cluster_algo clustering labels and cell types to create cell communities statistics
         clustering_labels = f'tissue_{self.method_key}'
         cell_types_communities = self.adata.obs[[clustering_labels, self.annotation]]
         # remove cells with unknown cell community label
@@ -385,11 +386,11 @@ class CommunityClusteringAlgo(ABC):
         # box plot per cluster of cell type percentages distribution
         sc.settings.set_figure_params(dpi=100, facecolor='white')
 
-        cluster_list = np.unique(self.tissue.obs['leiden'])
+        cluster_list = np.unique(self.tissue.obs[self.cluster_algo])
         
         for cluster in cluster_list:
             # for each window size a box plot is provided per cluster
-            cl_win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster]
+            cl_win_cell_distrib = self.tissue[self.tissue.obs[self.cluster_algo] == cluster]
             for window_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
                 # extract only windows of specific size
                 win_cell_distrib = cl_win_cell_distrib[cl_win_cell_distrib.obsm['spatial'][:,3] == window_size]
@@ -447,7 +448,7 @@ class CommunityClusteringAlgo(ABC):
                     ct_perc = cluster[1].sort_values(ascending=False)
                     top_three_ct = ct_perc.index.values[0:3]
 
-                    cl_win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster[0]]
+                    cl_win_cell_distrib = self.tissue[self.tissue.obs[self.cluster_algo] == cluster[0]]
                     cl_win_cell_distrib = cl_win_cell_distrib[:, top_three_ct]
 
                     # for each pair of window size and sliding step a separate color plot should be made
