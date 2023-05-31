@@ -4,7 +4,7 @@ source ~/anaconda3/etc/profile.d/conda.sh
 conda activate gcn
 
 # 1. Whole brain (MOSTA) - 1 slice 
-python main.py -f /goofys/Samples/Stereo_seq/E16.5_E1S3_cell_bin_whole_brain_spagft_4_noborderct.h5ad -o results/whole_brain --win_sizes 150 --sliding_steps 50 -a "sim anno" --scatter_thres 0.12 --downsample_rate 80 --spot_size 30 --resolution 0.25 --plotting 3 --min_cells_coeff 1.5 --min_num_celltype 1 --min_perc_celltype 10 --min_perc_to_show 8 --color_plot_system rgb &
+python main.py -f /goofys/Samples/Stereo_seq/E16.5_E1S3_cell_bin_whole_brain_noborderct.h5ad -o results/whole_brain --win_sizes 150 --sliding_steps 50 -a "sim anno" --scatter_thres 0.12 --downsample_rate 80 --spot_size 30 --resolution 0.25 --plotting 3 --min_cells_coeff 1.5 --min_num_celltype 1 --min_perc_celltype 10 --min_perc_to_show 8 --color_plot_system rgb &
 
 # 2. Adult brain - 3 slices
 python main.py -f /goofys/Samples/Stereo_seq/Mouse_brain/SS200000128TR_E2.h5ad,/goofys/Samples/Stereo_seq/Mouse_brain/SS200000141TL_A4.h5ad,/goofys/Samples/Stereo_seq/Mouse_brain/SS200000141TL_B5.h5ad -o results/adult_brain -a celltype_pred --win_sizes 300 --sliding_steps 50 --resolution 0.2 --spot_size 50 --plotting 4 &
@@ -26,6 +26,5 @@ python main.py -f /goofys/Samples/slide_seq/cellxgene_kidney_slide_seq_v2/Puck_1
 # 6. Carcinoma - tumor, normal, border
 # https://www.biorxiv.org/content/10.1101/2021.10.21.465135v1.full
 python main.py -f /goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-P_FE2.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-M_DU3.h5ad,/goofys/projects/ctc/LC6-M_DW1_web1_bin50/LC5-T_FD4.h5ad -o results/carcinoma -a cell_type --win_sizes 12 --sliding_steps 6 --resolution 0.1 --spot_size 1.5 --plotting 4 --downsample_rate 1 --min_cells_coeff 1 --min_num_celltype 1 --min_perc_celltype 10 --min_perc_to_show 8 --min_cluster_size 200 &
-
 
 wait

@@ -82,7 +82,7 @@ class CommunityDetection():
             # add algo object for each slice to a list
             algo_list.append(algo)
         
-        if self.params['plotting'] > 0:
+        if self.params['plotting'] > 0 and len(algo_list) > 1:
             self.plot_all_annotation(self.params['out_path'], algo_list)
 
         # MERGE TISSUE ANNDATA
@@ -126,10 +126,12 @@ class CommunityDetection():
                     algo.plot_cluster_mixtures()
                     algo.boxplot_stats()
                     algo.colorplot_stats(color_system=self.params['color_plot_system'])
+                if self.params['plotting'] > 3:
+                    algo.colorplot_stats_per_cell_types()
                 # save final tissue with stats
                 algo.save_tissue(suffix='_stats')
         
-        if self.params['plotting'] > 0:
+        if self.params['plotting'] > 0 and len(algo_list) > 1:
             self.plot_all_clustering(self.params['out_path'], algo_list)
         if self.params['plotting'] > 2:
             self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list], self.params['out_path'])
@@ -142,13 +144,14 @@ class CommunityDetection():
 
         generate_report(self.params)
     
-    def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
+    def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False):
         number_of_samples = len(algo_list)
         number_of_rows = 2 if number_of_samples%2==0 and number_of_samples>2 else 1
         number_of_columns = (number_of_samples // 2) if number_of_samples % 2==0 and number_of_samples>2 else number_of_samples
 
         figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
         h_d = {}
+        unknown_label = []
         for (algo, ax) in zip(algo_list, axes.flatten()):
             palette = algo.cluster_palette if clustering else algo.annotation_palette
             sc.pl.spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False)
@@ -157,11 +160,22 @@ class CommunityDetection():
             hands, labs = ax.get_legend_handles_labels()
             for h, l in zip(hands, labs):
                 h._sizes = [11]
+                if l=='unknown':
+                    unknown_label = np.array([[h, l]])
+                    continue
                 if l not in h_d.values():
                     h_d[h] = l
-        
-        handles = np.array([[h, l] for (h, l) in h_d.items()])
+        try:
+            handles = np.array([[h, int(l)] for (h, l) in h_d.items()])
+        except:
+            handles = np.array([[h, l] for (h, l) in h_d.items()])
+
         handles = handles[handles[:, 1].argsort()]
+        handles[:, 1] = handles[:, 1].astype('str')
+
+        if len(unknown_label)>0:
+            handles = np.concatenate((handles, unknown_label), axis=0) 
+        
         legend_ncols = 1 if len(handles)<=12 else 2
         figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
         figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
