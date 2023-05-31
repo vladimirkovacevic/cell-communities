@@ -2,11 +2,23 @@ import skimage.measure
 import scipy.ndimage
 import numpy as np
 import pandas as pd
+import time
 
+from functools import wraps
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        print(f'Function {func.__name__} took {total_time:.4f}s')
+        return result
+    return timeit_wrapper
 
 def entropy2D(image):
     return skimage.measure.shannon_entropy(image)
-
 
 def scatteredness2D(image, kernel):
     _, num_objects = scipy.ndimage.label(image, structure=kernel, output=None)  # this assumes 4 neighbors connectivity
@@ -19,7 +31,6 @@ def scatteredness2D(image, kernel):
     # [NOTE] try to find a heuristic to control the downsampling rate based on the proportion of cell number to area pixel number
     scatteredness = num_objects / image.size * (np.sum(kernel.ravel()) - 1)   # it is corrected with -1 for the central point
     return scatteredness
-
 
 def calculate_spatial_metrics(adata, unique_cell_type, downsample_rate, annotation):
     # calculate cell type specific global metrics

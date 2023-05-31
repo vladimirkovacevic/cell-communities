@@ -5,7 +5,7 @@ COMMUNITY_DETECTION_DEFAULTS = {
     'spot_size': 30,
     'verbose': 0,
     'plotting': 2,
-    'project_name': "Project",
+    'project_name': "community",
     'skip_stats': False,
     'total_cell_norm': 10000,
     'downsample_rate': 80,
@@ -25,6 +25,7 @@ COMMUNITY_DETECTION_DEFAULTS = {
     'min_count_per_type': 0.1
 }
 
+# places to find community id in figure names for html report
 BOXPLT_C_INDEX = 1
 COLORPLT_C_INDEX = 2
 CMIXT_C_INDEX = -1

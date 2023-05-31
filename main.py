@@ -3,12 +3,9 @@ import logging
 import time
 
 import argparse as ap
-import anndata as ad
 import scanpy as sc
-import numpy as np
-import pandas as pd
 
-from core import *
+from community_detection import *
 
 
 if __name__ == '__main__':
@@ -50,127 +47,24 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.NOTSET)
-        
-    # Create directory to store outputs
-    if not os.path.exists(args.out_path):
-        os.makedirs(args.out_path)
-
-    algo_list = []
-    tissue_list = []
-    win_sizes = "_".join([i for i in args.win_sizes.split(',')])
-    args.project_name_orig = args.project_name
-    args.out_path_orig = args.out_path
-    args.project_name += f"_r{args.resolution}_ws{win_sizes}_en{args.entropy_thres}_sct{args.scatter_thres}_dwr{args.downsample_rate}_mcc{args.min_cells_coeff}"
-    args.out_path = os.path.join(args.out_path, args.project_name)
-    if not os.path.exists(args.out_path):
-            os.mkdir(args.out_path)
-    # FOR all slices
-    for slice_id, file in enumerate(args.files.split(',')):
+    
+    slices = []
+    file_names = []
+    for file in args.files.split(','):
+        file_names.append(file)
         # READ CELL TYPE ADATA
         if file.endswith('.h5ad'):
             adata = sc.read(file)
-            adata.uns['slice_id'] = slice_id
-            if 'X_spatial' in adata.obsm:
-                adata.obsm['spatial'] = adata.obsm['X_spatial'].copy()
-            elif 'spatial_stereoseq' in adata.obsm:
-                adata.obsm['spatial'] = np.array(adata.obsm['spatial_stereoseq'].copy())
+            slices.append(adata)
         else:
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
-        # FEATURE EXTRACTION (SLIDING_WINDOW)
-        algo = SlidingWindowMultipleSizes(adata, slice_id, file, **vars(args))
-        # plot original annotation
-        if args.plotting > 1:
-            algo.plot_annotation()
-        # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness
-        algo.run()
-        if args.plotting > 1:
-            algo.plot_histogram_cell_sum_window()
-        # CELL TYPE FILTERING
-        # [NOTE] This is not valid for multislice. A consensus on removing a cell type must
-        # be made for all slices before removing it from any slice.
-        # here I have tissue, I want to calculate entropy and scatteredness for each cell type in adata
-        # and based on this information remove certain cell types
-        entropy, scatteredness, cell_type_images = \
-            calculate_spatial_metrics(algo.adata, algo.unique_cell_type, algo.downsample_rate, algo.annotation)
-        # init var layer of tissue anndata object
-        algo.tissue.var = algo.tissue.var.copy()
-        algo.tissue.var.loc[:, 'entropy'] = entropy.loc[algo.tissue.var.index]
-        algo.tissue.var.loc[:, 'scatteredness'] = scatteredness.loc[algo.tissue.var.index]
-        algo.tissue.uns['cell_t_images'] = cell_type_images
-        # save a .csv file with metrics per cell type
-        algo.save_metrics()
-        # plot binary images of cell types spatial positions
-        if args.plotting > 3:
-            algo.plot_celltype_images()
-        # filter the cell types which are not localized using calculated metrics (entropy and scatteredness)
-        algo.cell_type_filtering()
-
-        # add algo object for each slice to a list
-        algo_list.append(algo)
     
-    if args.plotting > 0:
-        plot_all_annotation(args.out_path, algo_list)
+    cd = CommunityDetection(slices, file_names=file_names, **vars(args))
+    cd.run()
 
-    # MERGE TISSUE ANNDATA
-    # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
-    merged_tissue = ad.concat([a.get_tissue() for a in algo_list], axis=0, join='outer')
-    # if tissues have different sets of cell those columns are filled with NANs
-    # this is corrected by writing 0s
-    merged_tissue.X[np.isnan(merged_tissue.X)] = 0.0
-
-    # CLUSTERING (WINDOW_LABELS)
-    sc.pp.neighbors(merged_tissue, use_rep='X')
-    sc.tl.leiden(merged_tissue, resolution=args.resolution)
-
-    for slice_id, algo in enumerate(algo_list):
-        # extract clustering data from merged_tissue
-        algo.set_clustering_labels(
-            merged_tissue.obs.loc[merged_tissue.obsm['spatial'][:, 2] == slice_id, 'leiden'])
-
-        # COMMUNITY CALLING (MAJORITY VOTING)
-        algo.community_calling()
-
-        # save anndata objects for further use
-        if args.save_adata:
-            algo.save_anndata()
-        algo.save_community_labels()
-        algo.save_tissue()
-
-        # PLOT COMMUNITIES & STATISTICS
-        # plot cell communities clustering result
-        if args.plotting > 0:
-            algo.plot_clustering()
-
-        # if flag skip_stats is active, skip cell mixture statistics analysis
-        if not args.skip_stats:
-            algo.calculate_cell_mixture_stats()
-            algo.save_mixture_stats()
-            if args.plotting > 1:
-                algo.plot_stats()
-                algo.plot_celltype_table()
-            if args.plotting > 2:
-                algo.plot_cluster_mixtures()
-                algo.boxplot_stats()
-                algo.colorplot_stats(color_system=args.color_plot_system)
-            # save final tissue with stats
-            algo.save_tissue(suffix='_stats')
-    
-    if args.plotting > 0:
-        plot_all_clustering(args.out_path, algo_list)
-    if args.plotting > 2:
-        plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list], args.out_path)
-        plot_cell_abundance_total(algo_list, args.out_path)
-        plot_cluster_abundance_total(algo_list, args.out_path)
-    if args.plotting > 3:
-        plot_cell_perc_in_community_per_slice(algo_list, args.out_path)
-        plot_cell_abundance_per_slice(algo_list, args.out_path)
-        plot_cluster_abundance_per_slice(algo_list, args.out_path)
-
-    generate_report(args)
     end_time = time.perf_counter()
     total_time = end_time - start_time
-    print(f'main.py took {total_time:.4f}s')
 
     logging.info(f'main.py took {total_time:.4f}s')
     logging.warning('END')

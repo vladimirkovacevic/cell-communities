@@ -9,7 +9,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-from .utils import timeit
+from .metrics import timeit
 
 cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c564b", \
                   "#e377c2", "#b5bd61", "#17becf", "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", \

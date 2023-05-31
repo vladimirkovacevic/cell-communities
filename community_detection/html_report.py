@@ -3,7 +3,7 @@ import os
 import subprocess
 
 from collections import defaultdict
-from .utils import timeit
+from .metrics import timeit
 from pathlib import Path
 
 from .constants import BOXPLT_C_INDEX, COLORPLT_C_INDEX, CMIXT_C_INDEX 
