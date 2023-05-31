@@ -4,11 +4,12 @@ import subprocess
 
 from collections import defaultdict
 from .utils import timeit
+from pathlib import Path
 
 
-BOXPLT_C_INDEX = 9
-COLORPLT_C_INDEX = 15
-CMIXT_C_INDEX = -5
+BOXPLT_C_INDEX = 1
+COLORPLT_C_INDEX = 2
+CMIXT_C_INDEX = -1
 
 def get_base64_encoded_img(path):
     data_uri = base64.b64encode(open(path, 'rb').read()).decode('utf-8')
@@ -50,7 +51,7 @@ def get_css():
             bottom: 0;
             width: 100%;
             height: 2.5rem;
-            background-color:#FAEFFF;
+            background-color:#e1c8eb;
             text-align: center;
             padding-bottom:20px
         }
@@ -113,6 +114,9 @@ def per_slice_content(path, plotting_level):
     return content
 
 def get_table_plots(path):
+    celltype_table = ""
+    cell_mixtures = ""
+    hist_cell_number = ""
     for root, dirs, files in os.walk(path):
         for name in files:
             if name.startswith("celltype_table"):
@@ -130,9 +134,9 @@ def get_table_plots(path):
             </thead>
             <tbody>
             <tr>
-                <td class="pad20" style="width:40%"><img src={get_base64_encoded_img(celltype_table)}></td>
-                <td class="pad20"><img src={get_base64_encoded_img(cell_mixtures)}></td>
-                <td class="pad20" style="width:20%"><img src={get_base64_encoded_img(hist_cell_number)}></td>
+                <td class="pad20" style="width:40%"><img src={get_base64_encoded_img(celltype_table) if celltype_table != "" else ""}></td>
+                <td class="pad20"><img src={get_base64_encoded_img(cell_mixtures) if cell_mixtures != "" else ""}></td>
+                <td class="pad20" style="width:20%"><img src={get_base64_encoded_img(hist_cell_number) if hist_cell_number != "" else ""}></td>
             </tr>
             </tbody>
         </table>
@@ -140,6 +144,8 @@ def get_table_plots(path):
     '''
 
 def per_community_content(path, plotting_level):
+    if plotting_level < 3:
+        return ""
     content = ""
     cmixtures_dict = defaultdict(list)
     boxplots_dict = defaultdict(list)
@@ -150,20 +156,23 @@ def per_community_content(path, plotting_level):
             slice_path = os.path.join(path, name)
             for file in os.listdir(slice_path):
                 if file.startswith("boxplot"):
-                    boxplots_dict[file[BOXPLT_C_INDEX]].append(os.path.join(slice_path, file))
+                    cluster = int(Path(file).stem.split("_")[BOXPLT_C_INDEX][1:])
+                    boxplots_dict[cluster].append(os.path.join(slice_path, file))
                 if file.startswith("cmixtures"):
-                    cmixtures_dict[file[CMIXT_C_INDEX]].append(os.path.join(slice_path, file))
+                    cluster = int(Path(file).stem.split("_")[CMIXT_C_INDEX][1:])
+                    cmixtures_dict[cluster].append(os.path.join(slice_path, file))
                 if file.startswith("colorplot"):
-                    colorplot_dict[file[COLORPLT_C_INDEX]].append(os.path.join(slice_path, file))
+                    cluster = int(Path(file).stem.split("_")[COLORPLT_C_INDEX][1:])
+                    colorplot_dict[cluster].append(os.path.join(slice_path, file))
     
-    content += make_table(cmixtures_dict, 2, "Cell types that are present in each community") #TODO if needed additional comments what these plots represent
-    content += make_table(boxplots_dict, 2, "Boxplots of cell types that are present in each community")
-    content += make_table(colorplot_dict, 2, "RGB Colorplots")
+    content += make_table(cmixtures_dict, columns=2, comment="Cell types that are present in each community")
+    content += make_table(boxplots_dict, columns=2, comment="Boxplots of cell types that are present in each community")
+    content += make_table(colorplot_dict, columns=2, comment="RGB Colorplots")
     return content
 
 def make_table(plot_dict, columns, comment):
     content = ""
-    for _, plots in plot_dict.items():
+    for _, plots in sorted(plot_dict.items()):
         rows = ""
         plots = [f'<td class="shrink"><img src={get_base64_encoded_img(plot)}></td>' for plot in plots]
         for i in range(0,len(plots),columns):
@@ -175,7 +184,7 @@ def make_table(plot_dict, columns, comment):
             {rows}
             </tbody>
         </table>
-        <hr>
+        <br>
         '''
 
     return f'''
@@ -188,6 +197,7 @@ def make_table(plot_dict, columns, comment):
         </table>
         {content}
         <hr>
+        <br>
     '''
 
 @timeit
@@ -202,6 +212,7 @@ def generate_report(args):
         if k == 'out_path_orig' or k == 'project_name_orig':
             k = k[:-5]
         command += f"--{k} {v} "
+
     commit_date = subprocess.check_output(r'git log --pretty=format:"%h%x09%x09%ad%x09%s" -n 1', shell=True).expandtabs()
 
     htmlstr = f'''
@@ -215,6 +226,7 @@ def generate_report(args):
 
     <script>
     let text = "{command}"
+
     const copyCommand = async () => {{
         try {{
         await navigator.clipboard.writeText(text);
@@ -223,16 +235,25 @@ def generate_report(args):
         console.error('Failed to copy: ', err);
         }}
     }}
+
+    function remove_elements(){{
+	let allEls = document.querySelectorAll('.testRemove')
+	allEls.forEach(el => {{
+		if (el.getAttribute('data-value') == "remove"){{
+			el.style.display = 'none';
+			}}
+		}});
+	}}
     </script>
 
     <title>Cell Communities Report</title>
     <link rel="icon" type="image/png" sizes="16x16" href={get_base64_encoded_img(f"{os.path.dirname(__file__)}/assets/favicon.ico")}/>
     </head>
 
-    <body>
+    <body onload="remove_elements()">
     <div class="page-container">
         <div class="content-wrap">
-            <div style="background-color:#FAEFFF;">
+            <div style="background-color:#e1c8eb;">
                 <h1 style="text-align: center; margin:0"> Cell communities clustering report</h1>
                 <br>
                 <table class="center">
@@ -304,42 +325,42 @@ def generate_report(args):
             <div class="centered">
                 <img title="Result of CCD algorithm contained in .obs of anndata object" src={all_slices_get_figure(args.out_path, "clustering_per_slice.png", args.plotting)}>
             </div>
-            <div class="centered">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
                 <h3>Cell mixtures for all slices:</h3>
             </div>
-            <div class="centered">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
                 <img title="Showing the percentage of each cell type within obtained community and corresponding sums" src={all_slices_get_figure(args.out_path, "total_cell_mixtures_table.png", args.plotting)}>
             </div>
-            <div class="centered">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
                 <h3>Cell type abundance:</h3>
             </div>
-            <div class="centered">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
                 <img title="Percentage of specific cell types per slice" src={all_slices_get_figure(args.out_path, "cell_abundance_all_slices.png", args.plotting)}>
             </div>
-            <div class="centered">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
                 <h3>Communities abundance:</h3>
             </div>
-            <div class="centered">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
                 <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(args.out_path, "cluster_abundance_all_slices.png", args.plotting)}>
             </div>
-            <div class="centered">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 4 else "keep"}>
                 <h3>Cell percentage in communities:</h3>
-            </div class="centered">
-            <div class="centered">
+            </div class="centered testRemove">
+            <div class="centered testRemove" data-value={"remove" if args.plotting < 4 else "keep"}>
                 <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(args.out_path, "cell_perc_in_community_per_slice.png", args.plotting)}>
             </div>
             <br><hr>
-            <div>
+            <div data-value={"remove" if args.plotting < 2 else "keep"}>
                 <h2 style="text-align: center;">Per slice</h2>
             </div>
-            <div>
+            <div class="testRemove" data-value={"remove" if args.plotting < 2 else "keep"}>
                 {per_slice_content(args.out_path, args.plotting)}
             </div>
             <br><hr>
-            <div>
+            <div class="testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
                 <h2 style="text-align: center;">Per community</h2>
             </div>
-            <div class="centeredSmall">
+            <div class="centeredSmall" data-value={"remove" if args.plotting < 3 else "keep"}>
                 {per_community_content(args.out_path, args.plotting)}
             </div>
         </div>

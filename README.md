@@ -53,8 +53,20 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 - `--min_cells_coeff`: Multiple of standard deviations from mean values that determines the cutoff for a certain value. Default value is `1.5`.
 - `--save_adata`: Save Anndata file with resulting .obs column of cell community labels. Default value is False.
 - `--min_count_per_type`: Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages). Default is `0.1`.
-## Examples
+- `--project_name`: Project name that is used to name a directory containing all the slices used. Default is `Project`.
+- `--min_num_celltype`: Minimum number of cell types that have more than --min_perc_celltype in a cluster, for a cluster to be shown in plot_celltype_table(). Default is `2`.
+- `--min_perc_celltype`: Minimum percentage of cells of a cell type which at least min_num_celltype cell types need to have to show a cluster in plot_celltype_table(). Default is `15`.
+- `--color_plot_system`: Color system for display of cluster specific windows. Available: rgb, hsv. Default is `rgb`.
+## Example
 
+#### Download data: 
 ```css
-python main.py -f data.h5ad -a annotation 
+wget https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad
 ```
+
+#### Run the algorithm:
+```css
+python main.py -f E16.5_E1S3_cell_bin_whole_brain.h5ad -o results/whole_brain -a "sim anno" --scatter_thres 0.12 --resolution 0.25 --min_num_celltype 1 --min_perc_celltype 10 --min_perc_to_show 8 --plotting 3
+```
+
+

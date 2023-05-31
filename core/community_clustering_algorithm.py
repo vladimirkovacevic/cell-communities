@@ -35,14 +35,14 @@ cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c56
                   
 class CommunityClusteringAlgo(ABC):
     def __init__(self, adata, slice_id, input_file_path, **params):
+        self.slice_id = slice_id
+        for key, value in params.items():
+            setattr(self, key, value)
         sc.settings.verbosity = 3 if params['verbose'] else params['verbose']
         sc.settings.set_figure_params(dpi=300, facecolor='white')
         self.adata = adata
-        self.slice_id = slice_id
         self.adata.uns['algo_params'] = params
         self.adata.uns['sample_name'] = os.path.basename(input_file_path.rsplit(".", 1)[0])
-        for key, value in params.items():
-            setattr(self, key, value)
 
         self.tissue = None
 
@@ -267,7 +267,7 @@ class CommunityClusteringAlgo(ABC):
         for cluster in cluster_list:
             # for each window size a box plot is provided per cluster
             cl_win_cell_distrib = self.tissue[self.tissue.obs['leiden'] == cluster]
-            for window_size in self.win_sizes_list:
+            for window_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
                 # extract only windows of specific size
                 win_cell_distrib = cl_win_cell_distrib[cl_win_cell_distrib.obsm['spatial'][:,3] == window_size]
                 # check if subset anndata object is empty
@@ -288,7 +288,7 @@ class CommunityClusteringAlgo(ABC):
                         ax = sns.stripplot(x='Cell Type', y='Percentage', data=cell_type_distrib, jitter=True, color='black', size=2)
                     # remove top and right frame of the plot
                     sns.despine(top=True, right=True)
-                    ax.set_title(f'Cell community {cluster} ({self.adata.uns["sample_name"]})')
+                    ax.set_title(f'Cell community {cluster} win size {window_size} step {sliding_step} ({self.adata.uns["sample_name"]})')
                     ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
                     ax.xaxis.tick_bottom() # x axis on the bottom
                     fig.savefig(os.path.join(self.dir_path, f'boxplot_c{cluster}_ws{window_size}.png'), bbox_inches='tight')
