@@ -10,6 +10,7 @@ from functools import reduce
 from itertools import cycle
 from matplotlib import pyplot as plt
 from collections import defaultdict
+from sklearn.cluster import SpectralClustering
 
 from anndata import AnnData
 from typing import List
@@ -95,12 +96,23 @@ class CommunityDetection():
 
         # CLUSTERING (WINDOW_LABELS)
         sc.pp.neighbors(merged_tissue, use_rep='X')
-        sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
+            
+        if self.params['cluster_algo'] == 'leiden':
+            sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
+        elif self.params['cluster_algo'] == 'spectral':
+            sc = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
+            merged_tissue.obs[self.params['cluster_algo']] = (sc.fit_predict(merged_tissue.obsp['connectivities'])).astype('str')
+            # sc = SpectralClustering(n_clusters=5, eigen_solver='arpack', random_state=0, affinity='precomputed_nearest_neighbors', n_jobs=5)
+            # merged_tissue.obs[args.cluster_algo] = (sc.fit_predict(merged_tissue.obsp['distances'])).astype('str')
+            # merged_tissue.obs[args.cluster_algo] = (spectral_clustering(merged_tissue.obsp['connectivities'], n_clusters=5, eigen_solver='arpack', random_state=0)).astype('str')
+        else:
+            logging.error('Unsupported clustering algorithm')
+            sys.exit(1)
 
         for slice_id, algo in enumerate(algo_list):
             # extract clustering data from merged_tissue
             algo.set_clustering_labels(
-                merged_tissue.obs.loc[merged_tissue.obsm['spatial'][:, 2] == slice_id, 'leiden'])
+                merged_tissue.obs.loc[merged_tissue.obsm['spatial'][:, 2] == slice_id, self.params['cluster_algo']])
 
             # COMMUNITY CALLING (MAJORITY VOTING)
             algo.community_calling()
