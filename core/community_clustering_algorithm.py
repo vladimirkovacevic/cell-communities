@@ -384,7 +384,7 @@ class CommunityClusteringAlgo(ABC):
             data_df = pd.DataFrame(windows_mixture.X/self.total_cell_norm, columns=windows_mixture.var.index, index=windows_mixture.obs.index)
             rgb_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
             
-            for cell_type in self.unique_cell_type:
+            for cell_type in self.tissue.var.index:
                 for window in data_df.iterrows():
                     wx = int(window[0].split("_")[0])
                     wy = int(window[0].split("_")[1])
