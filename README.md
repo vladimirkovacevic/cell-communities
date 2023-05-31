@@ -59,12 +59,12 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 - `--color_plot_system`: Color system for display of cluster specific windows. Available: rgb, hsv. Default is `rgb`.
 ## Example
 
-### Download data: 
+#### Download data: 
 ```css
-wget [ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad](https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad)
+wget https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad
 ```
 
-### Run the algorithm:
+#### Run the algorithm:
 ```css
 python main.py -f E16.5_E1S3_cell_bin_whole_brain.h5ad -o results/whole_brain -a "sim anno" --scatter_thres 0.12 --resolution 0.25 --min_num_celltype 1 --min_perc_celltype 10 --min_perc_to_show 8 --plotting 3
 ```
