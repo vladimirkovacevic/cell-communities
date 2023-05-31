@@ -4,7 +4,7 @@ from .community_clustering_algorithm import CommunityClusteringAlgo
 from .metrics import *
 from .html_report import generate_report
 from .metrics import calculate_spatial_metrics
-from .community_detection import CommunityDetection
+from .constants import *
 
 try:
     from .sliding_window import SlidingWindow

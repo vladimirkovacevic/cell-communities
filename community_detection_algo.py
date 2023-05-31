@@ -13,11 +13,7 @@ from matplotlib import pyplot as plt
 
 from anndata import AnnData
 from typing import List
-from .sliding_window import SlidingWindowMultipleSizes
-from .metrics import timeit
-from .html_report import generate_report
-from .metrics import calculate_spatial_metrics
-from .constants import COMMUNITY_DETECTION_DEFAULTS
+from community_detection import *
 
 
 class CommunityDetection():
