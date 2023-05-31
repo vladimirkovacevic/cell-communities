@@ -144,10 +144,10 @@ class CommunityDetection():
 
         generate_report(self.params)
     
-    def plot_all_slices(out_path, algo_list, annotation, img_name, clustering=False):
+    def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
         number_of_samples = len(algo_list)
-        number_of_rows = 2 if number_of_samples%2==0 and number_of_samples>2 else 1
-        number_of_columns = (number_of_samples // 2) if number_of_samples % 2==0 and number_of_samples>2 else number_of_samples
+        number_of_rows = 2 if number_of_samples % 2 == 0 and number_of_samples > 2 else 1
+        number_of_columns = (number_of_samples // 2) if number_of_samples % 2 == 0 and number_of_samples > 2 else number_of_samples
 
         figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
         h_d = {}
@@ -176,7 +176,7 @@ class CommunityDetection():
         if len(unknown_label)>0:
             handles = np.concatenate((handles, unknown_label), axis=0) 
         
-        legend_ncols = 1 if len(handles)<=12 else 2
+        legend_ncols = 1 if len(handles) <= 12 else 2
         figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
         figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
         plt.close()

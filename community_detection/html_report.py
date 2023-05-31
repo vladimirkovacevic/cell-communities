@@ -197,6 +197,15 @@ def make_table(plot_dict, columns, comment):
         <br>
     '''
 
+def annotation_and_communities_figures(path):
+    num_dirs = 0
+    annotations = []
+    communities = []
+    for root, dirs, files in os.walk(path): 
+        for name in dirs:
+            for file in os.path.join(root, name):
+                pass
+
 @timeit
 def generate_report(params):
     if params['plotting'] == 0:
