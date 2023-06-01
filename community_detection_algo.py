@@ -1,4 +1,3 @@
-import argparse as ap
 import anndata as ad
 import numpy as np
 import matplotlib.ticker as mtick
@@ -37,8 +36,7 @@ class CommunityDetection():
         win_sizes = "_".join([i for i in self.params['win_sizes'].split(',')])
         self.params['project_name_orig'] = self.params['project_name']
         self.params['out_path_orig'] = self.params['out_path']
-        self.params['project_name'] += f"_r{self.params['resolution']}_ws{win_sizes}_en{self.params['entropy_thres']} \
-            _sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
+        self.params['project_name'] += f"_r{self.params['resolution']}_ws{win_sizes}_en{self.params['entropy_thres']}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
         self.params['out_path'] = os.path.join(self.params['out_path'], self.params['project_name'])
 
         if not os.path.exists(self.params['out_path']):
@@ -276,13 +274,13 @@ class CommunityDetection():
     @timeit
     def plot_cell_abundance_per_slice(self, algos, path):
         number_of_samples = len(algos)
-        if number_of_samples<=2:
+        if number_of_samples <=2:
             number_of_rows = 1
             number_of_columns = number_of_samples
         else:
             number_of_rows = 2 if number_of_samples % 2 == 0 else 1
             number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10))
+        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
         sc.settings.set_figure_params(dpi=300, facecolor='white')
@@ -343,7 +341,7 @@ class CommunityDetection():
         else:
             number_of_rows = 2 if number_of_samples % 2 == 0 else 1
             number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20, 10))
+        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20, 10), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
         sc.settings.set_figure_params(dpi=100, facecolor='white')

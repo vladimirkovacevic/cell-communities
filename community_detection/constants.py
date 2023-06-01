@@ -25,7 +25,7 @@ COMMUNITY_DETECTION_DEFAULTS = {
     'min_count_per_type': 0.1
 }
 
-# places to find community id in figure names for html report
+# index to find community id in figure names for html report
 BOXPLT_C_INDEX = 1
 COLORPLT_C_INDEX = 2
 CMIXT_C_INDEX = -1

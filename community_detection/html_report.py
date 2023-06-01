@@ -201,10 +201,17 @@ def annotation_and_communities_figures(path):
     num_dirs = 0
     annotations = []
     communities = []
-    for root, dirs, files in os.walk(path): 
-        for name in dirs:
-            for file in os.path.join(root, name):
-                pass
+    for root, dirs, files in os.walk(path):
+        for dir in dirs:
+            for file in os.listdir(os.path.join(root, dir)):
+                if file.startswith("cell_type_anno"):
+                    annotations.append(os.path.join(root, dir, file))
+                if file.startswith("clusters_cellspots"):
+                    communities.append(os.path.join(root, dir, file))
+    if len(annotations) > 1:
+        return (f"{path}/cell_type_per_slice.png", f"{path}/clustering_per_slice.png")
+    else:
+        return (annotations[0], communities[0])
 
 @timeit
 def generate_report(params):
@@ -220,6 +227,8 @@ def generate_report(params):
         command += f"--{k} {v} "
 
     commit_date = subprocess.check_output(r'git log --pretty=format:"%h%x09%x09%ad%x09%s" -n 1', shell=True).expandtabs()
+
+    annotation_figure, communities_figure = annotation_and_communities_figures(params['out_path'])
 
     htmlstr = f'''
     <!DOCTYPE html>
@@ -323,13 +332,13 @@ def generate_report(params):
                 <h3>Cell type annotation:</h3>
             </div>
             <div class="centered">
-                <img title="Annotation column in .obs of anndata object" src={all_slices_get_figure(params['out_path'], "cell_type_per_slice.png", params['plotting'])}>
+                <img title="Annotation column in .obs of anndata object" src={get_base64_encoded_img(annotation_figure)}>
             </div>
             <div class="centered">
                 <h3>Communities obtained:</h3>
             </div>
             <div class="centered">
-                <img title="Result of CCD algorithm contained in .obs of anndata object" src={all_slices_get_figure(params['out_path'], "clustering_per_slice.png", params['plotting'])}>
+                <img title="Result of CCD algorithm contained in .obs of anndata object" src={get_base64_encoded_img(communities_figure)}>
             </div>
             <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h3>Cell mixtures for all slices:</h3>
