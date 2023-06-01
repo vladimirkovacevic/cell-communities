@@ -10,8 +10,8 @@ import anndata as ad
 from anndata import AnnData
 from tqdm.auto import tqdm
 
-from .utils import timeit
-from core import CommunityClusteringAlgo
+from .metrics import timeit
+from community_detection import CommunityClusteringAlgo
 
 
 class SlidingWindow(CommunityClusteringAlgo):

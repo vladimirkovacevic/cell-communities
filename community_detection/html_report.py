@@ -3,13 +3,10 @@ import os
 import subprocess
 
 from collections import defaultdict
-from .utils import timeit
+from .metrics import timeit
 from pathlib import Path
 
-
-BOXPLT_C_INDEX = 1
-COLORPLT_C_INDEX = 2
-CMIXT_C_INDEX = -1
+from .constants import BOXPLT_C_INDEX, COLORPLT_C_INDEX, CMIXT_C_INDEX 
 
 def get_base64_encoded_img(path):
     data_uri = base64.b64encode(open(path, 'rb').read()).decode('utf-8')
@@ -200,13 +197,29 @@ def make_table(plot_dict, columns, comment):
         <br>
     '''
 
+def annotation_and_communities_figures(path):
+    num_dirs = 0
+    annotations = []
+    communities = []
+    for root, dirs, files in os.walk(path):
+        for dir in dirs:
+            for file in os.listdir(os.path.join(root, dir)):
+                if file.startswith("cell_type_anno"):
+                    annotations.append(os.path.join(root, dir, file))
+                if file.startswith("clusters_cellspots"):
+                    communities.append(os.path.join(root, dir, file))
+    if len(annotations) > 1:
+        return (f"{path}/cell_type_per_slice.png", f"{path}/clustering_per_slice.png")
+    else:
+        return (annotations[0], communities[0])
+
 @timeit
-def generate_report(args):
-    if args.plotting == 0:
+def generate_report(params):
+    if params['plotting'] == 0:
         return
 
     command = "python main.py "
-    for k,v in vars(args).items():
+    for k,v in params.items():
         if v == None or k == 'out_path' or k == 'project_name' or k == "skip_stats" or k == "save_adata":
             continue
         if k == 'out_path_orig' or k == 'project_name_orig':
@@ -214,6 +227,8 @@ def generate_report(args):
         command += f"--{k} {v} "
 
     commit_date = subprocess.check_output(r'git log --pretty=format:"%h%x09%x09%ad%x09%s" -n 1', shell=True).expandtabs()
+
+    annotation_figure, communities_figure = annotation_and_communities_figures(params['out_path'])
 
     htmlstr = f'''
     <!DOCTYPE html>
@@ -268,39 +283,39 @@ def generate_report(args):
                     <tbody>
                     <tr>
                         <td class="rightpad">Annotation</td>
-                        <td>{args.annotation}</td>
+                        <td>{params['annotation']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Resolution</td>
-                        <td>{args.resolution}</td>
+                        <td>{params['resolution']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Spot size</td>
-                        <td>{args.spot_size}</td>
+                        <td>{params['spot_size']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Total cells normalization</td>
-                        <td>{args.total_cell_norm}</td>
+                        <td>{params['total_cell_norm']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Downsample rate</td>
-                        <td>{args.downsample_rate}</td>
+                        <td>{params['downsample_rate']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Entropy threshold</td>
-                        <td>{args.entropy_thres}</td>
+                        <td>{params['entropy_thres']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Scatteredness threshold</td>
-                        <td>{args.scatter_thres}</td>
+                        <td>{params['scatter_thres']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Window sizes</td>
-                        <td>{args.win_sizes}</td>
+                        <td>{params['win_sizes']}</td>
                     </tr>
                     <tr>
                         <td class="rightpad">Sliding steps</td>
-                        <td>{args.sliding_steps}</td>
+                        <td>{params['sliding_steps']}</td>
                     </tr>
                     <tr>
                     <td colspan="2"><button title="Command that is used to generate results is copied to clipboard" class="rightpad myButton" type="button" onclick="copyCommand()">
@@ -317,51 +332,51 @@ def generate_report(args):
                 <h3>Cell type annotation:</h3>
             </div>
             <div class="centered">
-                <img title="Annotation column in .obs of anndata object" src={all_slices_get_figure(args.out_path, "cell_type_per_slice.png", args.plotting)}>
+                <img title="Annotation column in .obs of anndata object" src={get_base64_encoded_img(annotation_figure)}>
             </div>
             <div class="centered">
                 <h3>Communities obtained:</h3>
             </div>
             <div class="centered">
-                <img title="Result of CCD algorithm contained in .obs of anndata object" src={all_slices_get_figure(args.out_path, "clustering_per_slice.png", args.plotting)}>
+                <img title="Result of CCD algorithm contained in .obs of anndata object" src={get_base64_encoded_img(communities_figure)}>
             </div>
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h3>Cell mixtures for all slices:</h3>
             </div>
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
-                <img title="Showing the percentage of each cell type within obtained community and corresponding sums" src={all_slices_get_figure(args.out_path, "total_cell_mixtures_table.png", args.plotting)}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
+                <img title="Showing the percentage of each cell type within obtained community and corresponding sums" src={all_slices_get_figure(params['out_path'], "total_cell_mixtures_table.png", params['plotting'])}>
             </div>
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h3>Cell type abundance:</h3>
             </div>
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
-                <img title="Percentage of specific cell types per slice" src={all_slices_get_figure(args.out_path, "cell_abundance_all_slices.png", args.plotting)}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
+                <img title="Percentage of specific cell types per slice" src={all_slices_get_figure(params['out_path'], "cell_abundance_all_slices.png", params['plotting'])}>
             </div>
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h3>Communities abundance:</h3>
             </div>
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
-                <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(args.out_path, "cluster_abundance_all_slices.png", args.plotting)}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
+                <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(params['out_path'], "cluster_abundance_all_slices.png", params['plotting'])}>
             </div>
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 4 else "keep"}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 4 else "keep"}>
                 <h3>Cell percentage in communities:</h3>
             </div class="centered testRemove">
-            <div class="centered testRemove" data-value={"remove" if args.plotting < 4 else "keep"}>
-                <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(args.out_path, "cell_perc_in_community_per_slice.png", args.plotting)}>
+            <div class="centered testRemove" data-value={"remove" if params['plotting'] < 4 else "keep"}>
+                <img title="Percentage of cells in each community per slice" src={all_slices_get_figure(params['out_path'], "cell_perc_in_community_per_slice.png", params['plotting'])}>
             </div>
             <br><hr>
-            <div data-value={"remove" if args.plotting < 2 else "keep"}>
+            <div data-value={"remove" if params['plotting'] < 2 else "keep"}>
                 <h2 style="text-align: center;">Per slice</h2>
             </div>
-            <div class="testRemove" data-value={"remove" if args.plotting < 2 else "keep"}>
-                {per_slice_content(args.out_path, args.plotting)}
+            <div class="testRemove" data-value={"remove" if params['plotting'] < 2 else "keep"}>
+                {per_slice_content(params['out_path'], params['plotting'])}
             </div>
             <br><hr>
-            <div class="testRemove" data-value={"remove" if args.plotting < 3 else "keep"}>
+            <div class="testRemove" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 <h2 style="text-align: center;">Per community</h2>
             </div>
-            <div class="centeredSmall" data-value={"remove" if args.plotting < 3 else "keep"}>
-                {per_community_content(args.out_path, args.plotting)}
+            <div class="centeredSmall" data-value={"remove" if params['plotting'] < 3 else "keep"}>
+                {per_community_content(params['out_path'], params['plotting'])}
             </div>
         </div>
         <footer><h4>Report created from commit: {commit_date}</h4></footer>
@@ -370,14 +385,5 @@ def generate_report(args):
     </html>
     '''
 
-    with open(f"{args.out_path}/report.html", "w") as f:
+    with open(f"{params['out_path']}/report.html", "w") as f:
         f.write(htmlstr)
-    
-if __name__ == '__main__':
-    #change .utils to utils
-    import pickle 
-    print(os.getcwd())
-    file = open("core/args", "rb")
-    args = pickle.load(file)
-    file.close()
-    generate_report(args)

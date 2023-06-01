@@ -1,15 +1,16 @@
 import logging
 import os
-from abc import ABC, abstractmethod
 
-from skimage import color
 import numpy as np
 import scanpy as sc
 import pandas as pd
 import seaborn as sns
+
+from abc import ABC, abstractmethod
+from skimage import color
 from matplotlib import pyplot as plt
 
-from .utils import timeit
+from .metrics import timeit
 
 cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c564b", \
                   "#e377c2", "#b5bd61", "#17becf", "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", \
@@ -59,7 +60,6 @@ class CommunityClusteringAlgo(ABC):
         self.unique_cell_type = list(self.adata.obs[self.annotation].cat.categories)
 
         self.annotation_palette = {ct : self.adata.uns[f'{self.annotation}_colors'][i] for i, ct in enumerate(self.unique_cell_type)}
-
 
     @abstractmethod
     def run(self):
@@ -370,7 +370,6 @@ class CommunityClusteringAlgo(ABC):
         else:
             logging.warn(f'Unsupported color system: {color_system}.')
 
-
     @timeit
     def colorplot_stats_per_cell_types(self):
         color_system='rgb'
@@ -404,7 +403,6 @@ class CommunityClusteringAlgo(ABC):
                 fig.savefig(os.path.join(self.dir_path, f'ct_colorplot_rgb_{cell_type}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=200)
                 plt.close()
     
-
     @timeit
     def plot_celltype_table(self):
         sc.settings.set_figure_params(dpi=300, facecolor='white')
