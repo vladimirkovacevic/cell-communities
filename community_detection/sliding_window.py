@@ -15,7 +15,28 @@ from community_detection import CommunityClusteringAlgo
 
 
 class SlidingWindow(CommunityClusteringAlgo):
+    """
+    A class that represents the sliding window algorithm for community clustering.
+
+    This class extends the CommunityClusteringAlgo base class and provides the implementation of the sliding window
+    algorithm for community clustering. It takes in a spatial transcriptomics dataset and additional parameters to
+    perform community clustering using sliding windows.
+    
+    """
     def __init__(self, adata, slice_id, input_file_path, **params):
+        """
+        This method initializes the SlidingWindow object by setting up the necessary attributes.
+
+        Args:
+        - adata (anndata.AnnData): Annotated data object containing spatial transcriptomics data.
+        - slice_id (int): ID of the slice for which community clustering is performed.
+        - input_file_path (str): Path to the input file.
+        - **params: Additional parameters for the sliding window algorithm.
+
+        Raises:
+        - AssertionError: If the number of sliding steps is not equal to the number of window sizes.
+
+        """
         super().__init__(adata, slice_id, input_file_path, **params)
         self.win_sizes_list = [int(w) for w in self.win_sizes.split(',')]
         self.sliding_steps_list = [int(s) for s in self.sliding_steps.split(',')]
@@ -32,6 +53,14 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.method_key = 'sliding_window'
     
     def run(self):
+        """
+        This method executes the sliding window algorithm for community clustering. If the 'tfile' attribute is not set,
+        it calls the 'calc_feature_matrix' method with the first window size and sliding step from the respective lists.
+        
+        Raises:
+        - AttributeError: If the 'tfile' attribute ends with an extension other than '.h5ad'.
+
+        """
         if not self.tfile:
             self.calc_feature_matrix(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
@@ -42,6 +71,19 @@ class SlidingWindow(CommunityClusteringAlgo):
 
     @timeit
     def calc_feature_matrix(self, win_size, sliding_step):
+        """
+        Calculate the feature matrix for sliding window analysis.
+
+        This method calculates the feature matrix for sliding window analysis based on the given window size and sliding step.
+        It assigns centroids to each sliding step of windows and calculates features for each subwindow. The feature matrix
+        is then placed in an AnnData object with specified spatial coordinates of the sliding windows.
+
+        Parameters:
+        - win_size (int): The size of the sliding window.
+        - sliding_step (int): The sliding step for moving the window.
+
+        """
+    
         # window size needs to be a multiple of sliding step
         sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
         bin_slide_ratio = int(win_size/sliding_step)
@@ -102,15 +144,23 @@ class SlidingWindow(CommunityClusteringAlgo):
         min_cells_per_window = mean_cell_sum - self.min_cells_coeff * stddev_cell_sum
         self.tissue = self.tissue[self.tissue.obs['window_cell_sum'].values >= min_cells_per_window, :]
 
-    ## COMMUNITY CALLING
-    # Define subwindow cluster label based on labels of all overlapping windows
-    # Functions goes through all subwindow positions and gathers clustering
-    # labels of all windows that contain it. Final label of the subwindow is
-    # the one with majority vote. Window cluster labels are in self.tissue_pruned.obs['leiden']
-    # and the subwindow labels are placed in self.tissue.obs['leiden_max_vote']
-    # self.tissue_pruned is used only for clustering and is discarded
+    
     @timeit
     def community_calling(self, win_size, sliding_step):
+        """
+        Perform community calling for subwindows based on overlapping window labels.
+
+        This method defines the subwindow cluster label based on the labels of all overlapping windows. It goes through
+        all subwindow positions and gathers clustering labels of all windows that contain it. The final label of the
+        subwindow is determined by majority vote. Window cluster labels are stored in `self.tissue_pruned.obs['leiden']`,
+        and the subwindow labels are placed in `self.tissue.obs['leiden_max_vote']`. The `self.tissue_pruned` object is
+        used only for clustering and is discarded.
+
+        Parameters:
+        - win_size (int): The size of the sliding window.
+        - sliding_step (int): The sliding step for moving the window.
+
+        """
         sliding_step = (win_size/int((win_size/sliding_step))) if sliding_step!=None else win_size
         
         bin_slide_ratio = int(win_size/sliding_step)
@@ -145,10 +195,27 @@ class SlidingWindow(CommunityClusteringAlgo):
     
 
 class SlidingWindowMultipleSizes(SlidingWindow):
+    """Class for performing sliding window analysis with multiple window sizes."""
+
     def __init__(self, adata, slice_id, input_file_path, **params):
+        """
+        Initialize the SlidingWindowMultipleSizes object.
+
+        Parameters:
+        - adata: Annotated data object containing the input data.
+        - slice_id: Identifier for the current slice.
+        - input_file_path: Path to the input file.
+        - **params: Additional parameters for initialization.
+
+        """
         super().__init__(adata, slice_id, input_file_path, **params)
     
     def run(self):
+        """
+        This method calculates the feature matrix for each window size and sliding step combination, and concatenates
+        the resulting `tissue` objects into a single `tissue` object. If a `tfile` is provided, the method delegates
+        the execution to the base class `run` method.
+        """
         tissue_list = []
 
         if not self.tfile:
@@ -162,6 +229,15 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             super().run()
 
     def community_calling(self):
+        """
+        Perform community calling based on sliding window analysis.
+
+        This method performs community calling based on the results of sliding window analysis. If there is only one
+        window size and one sliding step specified, it delegates the execution to the base class `community_calling`
+        method with the specified window size and sliding step. Otherwise, it executes the
+        `community_calling_multiple_window_sizes_per_cell_multiprocessing` method.
+
+        """
         if len(self.win_sizes_list) == 1 and len(self.sliding_steps_list) == 1:
             super().community_calling(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
@@ -171,10 +247,13 @@ class SlidingWindowMultipleSizes(SlidingWindow):
     @timeit
     def community_calling_multiple_window_sizes_per_cell_multiprocessing(self):
         """
-        Per every cell we have location of its subwindow in window_spatial_{win_size}.
-        We collect all windows that cover that subwindow in cell_labels_all. We repeat this for all window sizes 
-        and then perform majority voting to get the final label.
-        Cells are split into as many batches as there are available cpus and processed in parallel.
+        Perform community calling using multiple window sizes per cell with multiprocessing.
+
+        For every cell, the method collects the location of its subwindow in `window_spatial_{win_size}`.
+        It gathers all windows that cover that subwindow in `cell_labels_all` and repeats this process for all
+        window sizes. Finally, it performs majority voting to obtain the final label for each cell. The cells are
+        split into as many batches as there are available CPUs and processed in parallel.
+        
         """
         # if cell batches are too small, caching is not efficient so we want at least 5000 cells per batch
         num_cpus_used = mp.cpu_count() if mp.cpu_count() < self.num_threads else self.num_threads
