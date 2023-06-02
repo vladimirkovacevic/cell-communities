@@ -143,6 +143,17 @@ class CommunityDetection():
         generate_report(self.params)
     
     def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
+        """
+        Plot all slices using the specified algorithms and annotations.
+
+        Parameters:
+        - out_path (str): The output path where the image will be saved.
+        - algo_list (list): A list of algorithm objects to plot.
+        - annotation (str): The annotation to use for coloring.
+        - img_name (str): The name of the output image file.
+        - clustering (bool, optional): Whether clustering is enabled. Defaults to False.
+
+        """
         number_of_samples = len(algo_list)
         number_of_rows = 2 if number_of_samples % 2 == 0 and number_of_samples > 2 else 1
         number_of_columns = (number_of_samples // 2) if number_of_samples % 2 == 0 and number_of_samples > 2 else number_of_samples
@@ -189,6 +200,14 @@ class CommunityDetection():
 
     @timeit 
     def plot_celltype_mixtures_total(self, cell_mixtures, path):
+        """
+        Plot the total cell type mixtures.
+
+        Parameters:
+        - cell_mixtures (list): A list of dictionaries containing cell type mixtures.
+        - path (str): The path where the plot will be saved.
+
+        """
         def merge_dicts(dict1, dict2):
             return { cluster: dict1.get(cluster, 0) + dict2.get(cluster, 0) for cluster in set(dict1) | set(dict2) }
         def merge_dicts_of_dicts(dict1, dict2):
@@ -230,8 +249,16 @@ class CommunityDetection():
         plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'), bbox_inches='tight')
         plt.close()
 
+
     @timeit
     def plot_cell_perc_in_community_per_slice(self, algos, path):
+        """
+        Plots the percentage of cells in each community per slice.
+
+        Parameters:
+        - algos (list): A list of algorithms.
+        - path (str): The path to save the plot.
+        """
         cells_in_comm_per_slice = {algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in algos}
         df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
         df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
@@ -246,8 +273,16 @@ class CommunityDetection():
         plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'), bbox_inches='tight')
         plt.close()
 
+
     @timeit
     def plot_cell_abundance_total(self, algos, path):
+        """
+        Plots the total cell abundance for each algorithm.
+
+        Parameters:
+        - algos (list): A list of algorithms.
+        - path (str): The path to save the plot.
+        """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
         sc.settings.set_figure_params(dpi=300, facecolor='white')
@@ -271,8 +306,16 @@ class CommunityDetection():
         plt.savefig(os.path.join(path, f'cell_abundance_all_slices.png'))
         plt.close()
 
+
     @timeit
     def plot_cell_abundance_per_slice(self, algos, path):
+        """
+        Plots the cell abundance for each algorithm per slice.
+
+        Parameters:
+        - algos (list): A list of algorithms.
+        - path (str): The path to save the plot.
+        """
         number_of_samples = len(algos)
         if number_of_samples <=2:
             number_of_rows = 1
@@ -308,6 +351,14 @@ class CommunityDetection():
 
     @timeit 
     def plot_cluster_abundance_total(self, algos, path):
+        """
+        Plots the total cluster abundance for each algorithm.
+
+        Parameters:
+        - algos (list): A list of algorithms.
+        - path (str): The path to save the plot.
+        
+        """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
         sc.settings.set_figure_params(dpi=300, facecolor='white')
@@ -334,6 +385,14 @@ class CommunityDetection():
 
     @timeit
     def plot_cluster_abundance_per_slice(self, algos, path):
+        """
+        Plots the cluster abundance for each algorithm per slice.
+
+        Parameters:
+        - algos (list): A list of algorithms.
+        - path (str): The path to save the plot.
+        
+        """
         number_of_samples = len(algos)
         if number_of_samples <= 2:
             number_of_rows = 1

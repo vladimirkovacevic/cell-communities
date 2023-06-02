@@ -35,7 +35,20 @@ cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c56
                   '#240046', '#0a0908', '#C32148', '#98f5e1']                  
                   
 class CommunityClusteringAlgo(ABC):
+    """Abstract base class for community detection algorithms."""
+
     def __init__(self, adata, slice_id, input_file_path, **params):
+        """
+        Initialize the CommunityClusteringAlgo.
+
+        Parameters:
+        - adata (AnnData): Annotated data object which represents the sample to which the algorithm will be applied.
+        - slice_id (int): ID of the slice (important when applying the algorithm to more than one slices).
+        - input_file_path (str): Path to the input file.
+        - **params: Additional parameters, important for a specific algorithm.
+
+        """
+
         self.slice_id = slice_id
         for key, value in params.items():
             setattr(self, key, value)
@@ -63,61 +76,140 @@ class CommunityClusteringAlgo(ABC):
 
     @abstractmethod
     def run(self):
+        """Run the algorithm."""
         pass
 
     @abstractmethod
     def calc_feature_matrix(self):
+        """Calculate the feature matrix and generate the tissue object."""
         pass
 
     @abstractmethod
     def community_calling(self):
+        """Perform community calling step."""
         pass
 
     def get_tissue(self):
+        """
+        Get the tissue object.
+
+        Returns:
+        - tissue (AnnData)
+
+        """
         return self.tissue
     
     def get_adata(self):
+        """
+        Get the annotated data object which represents sample.
+
+        Returns:
+        - adata (AnnData)
+
+        """
         return self.adata
 
     def get_community_labels(self):
+        """
+        Get the community labels of all the cells.
+
+        Returns:
+        - community_labels (pandas.Series)
+
+        """
         return self.adata.obs[f'tissue_{self.method_key}']
 
     def get_cell_mixtures(self):
+        """
+        Get the cell mixtures table.
+
+        Returns:
+        - cell_mixtures (pandas.DataFrame)
+
+        """
         return self.tissue.uns['cell mixtures']
     
     def set_clustering_labels(self, labels):
+        """
+        Set the clustering labels.
+
+        Parameters:
+        - labels (pandas.Series): The clustering labels.
+
+        """
         self.tissue.obs.loc[:, 'leiden'] = labels
 
     @timeit
     def plot_annotation(self):
+        """
+        Plot cells using the info of their spatial coordinates and cell type annotations.
+        
+        Saves the figure as 'cell_type_annotation.png' in the directory path.
+
+        """
         figure, ax = plt.subplots(nrows=1, ncols=1)
         sc.pl.spatial(self.adata, color=[self.annotation], spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
         plt.close()
-
+    
     def plot_histogram_cell_sum_window(self):
+        """
+        Plot a histogram of the number of cells in windows.
+
+        This method generates a histogram plot using the window cell sum values
+        from the 'obs' column of the tissue object. The resulting plot is saved as
+        an image file in the directory specified by 'dir_path'.
+        
+        """
+
         figure, ax = plt.subplots(nrows=1, ncols=1)
         plt.hist(self.tissue.obs['window_cell_sum'].values)
         figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws_{"_".join([str(i) for i in self.win_sizes_list])}.png'), dpi=300, bbox_inches='tight')
         plt.close()
    
     def cell_type_filtering(self):
+        """
+        Perform cell type filtering based on entropy and scatteredness thresholds.
+
+        This function filters the cells in `self.tissue` based on entropy and scatteredness thresholds. 
+        The filtered cells are stored in `self.tissue` and the raw data is preserved in `self.tissue.raw`.
+
+        """
         # extract binary image of cell positions for each cell type in the slice
         var_use = self.tissue.var.loc[(self.tissue.var['entropy']<self.entropy_thres) & (self.tissue.var['scatteredness']<self.scatter_thres)].index
         self.tissue.raw = self.tissue
         self.tissue = self.tissue[:, var_use]
+    
 
     @timeit
     def plot_celltype_images(self):
+        """
+        Plot and save cell type images.
+
+        This method iterates over each cell type in the sample and plots cells of that type. 
+        The figure is saved as a PNG file in the directory specified by 'dir_path'.
+
+        """
+        
         for cell_t in self.unique_cell_type:
             plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=250)
     
+
     @timeit
     def plot_clustering(self):
+        """
+        Plot results of the community detection algorithm.
+
+        This function generates a plot using the spatial coordinates of cells, 
+        where each cell belongs to a certain detected community.
+        The plot is saved as an image file.
+        
+        """
+
         # # plot initial clustering for each window
         # sc.pl.spatial(self.tissue, color='leiden', spot_size=1)
         # # plot clustering after majority voting for each subwindow
-        # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)
+        # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)    
         figure, ax = plt.subplots(nrows=1, ncols=1)
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
@@ -130,16 +222,20 @@ class CommunityClusteringAlgo(ABC):
         plt.close()
 
     def calculate_spatial_cell_type_metrics(self):
+        """Calculate spatial cell type metrics."""
         pass
-    ## CALCULATE_CELL_MIXTURE_STATS
-    # brief - Creates a pandas DataFrame of cell type percentages per class
-    # percentages are calculated globaly for all cells with single class label.
-    # This is saved in adata.uns['cell mixtures'] for further use by plot fn.
-    # Columns of total cell count per class and percentage of tissue per cluster
-    # are added. Row of total cell type count is added.
-    # DataFrame with additional columns and row is saved in adata.uns['cell mixture stats']
+    
+
     @timeit
     def calculate_cell_mixture_stats(self):
+        """
+        Calculate cell type percentages per cluster - community and save it in pandas.DataFrame object. 
+        
+        Percentages are calculated globaly for all cells with single class label. 
+        This is saved in self.tissue.uns['cell mixtures'] for further use by plot fn.
+        Columns of total cell count per class and percentage of tissue per cluster are added.
+        Row of total cell type count is added. DataFrame with additional columns and row is saved in adata.uns['cell mixture stats']
+        """
 
         # extract information on leiden clustering labels and cell types to create cell communities statistics
         clustering_labels = f'tissue_{self.method_key}'
@@ -196,6 +292,12 @@ class CommunityClusteringAlgo(ABC):
 
     @timeit
     def plot_stats(self):
+        """
+        Plot cell mixture statistics as a heatmap.
+
+        The heatmap is saved as a PNG file in the directory specified by `self.dir_path`.
+
+        """
         stats = self.tissue.uns['cell mixtures stats']
         sc.settings.set_figure_params(dpi=300, facecolor='white')
         sns.set(font_scale=1.5)
@@ -228,6 +330,13 @@ class CommunityClusteringAlgo(ABC):
 
     @timeit
     def plot_cluster_mixtures(self):
+        """
+        Plot cell mixtures for each cluster (community). Only cell types which have more than min_perc_to_show abundance will be shown.
+
+        The cell mixtures are obtained from `self.tissue.uns['cell mixtures stats']`. 
+        The resulting plots are saved as PNG files in the directory specified by `self.dir_path`.
+
+        """
         # plot each cluster and its cells mixture
         sc.settings.set_figure_params(dpi=200, facecolor='white')
         stats = self.tissue.uns['cell mixtures stats']
@@ -259,6 +368,14 @@ class CommunityClusteringAlgo(ABC):
 
     @timeit
     def boxplot_stats(self, stripplot=False):
+        """
+        Generate a box plot of cell type percentages distribution per cluster.
+
+        Args:
+            stripplot (bool, optional): Whether to overlay a stripplot of specific percentage values.
+        
+        """
+
         # box plot per cluster of cell type percentages distribution
         sc.settings.set_figure_params(dpi=100, facecolor='white')
 
@@ -297,6 +414,14 @@ class CommunityClusteringAlgo(ABC):
 
     @timeit
     def colorplot_stats(self, color_system='rgb'):
+        """
+        For each cluster (community) plot percentage of cell types. Plotting is done on windows level. 
+
+        Parameters:
+        - color_system (str, optional): Color system to use. Supported values are 'hsv' and 'rgb'.
+
+        """
+
         supported_color_systems = ['hsv', 'rgb']
         if color_system in supported_color_systems:
             stats = self.tissue.uns['cell mixtures'].copy()
@@ -372,6 +497,12 @@ class CommunityClusteringAlgo(ABC):
 
     @timeit
     def colorplot_stats_per_cell_types(self):
+        """
+        For each cell type plot its percentage in each window as the red channel of RGB. 
+        Green and blue channels values are 128.
+
+        """
+
         color_system='rgb'
         cx_min = int(np.min(self.adata.obsm['spatial'][:,0]))
         cy_min = int(np.min(self.adata.obsm['spatial'][:,1]))
@@ -405,6 +536,8 @@ class CommunityClusteringAlgo(ABC):
     
     @timeit
     def plot_celltype_table(self):
+        """Plot a table showing cell type abundance per cluster."""
+        
         sc.settings.set_figure_params(dpi=300, facecolor='white')
         sns.set(font_scale=1.5)
 
@@ -457,27 +590,44 @@ class CommunityClusteringAlgo(ABC):
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
 
     def save_metrics(self):
-        # save metrics results in csv format
+        """Save metrics results in CSV format."""
+        
         self.tissue.var[['entropy', 'scatteredness']].to_csv(os.path.join(self.dir_path, f'spatial_metrics_{self.params_suffix}.csv'))
 
     def save_tissue(self, suffix=''):
-        # save anndata file
+        """
+        Save self.tissue anndata object.
+
+        Parameters:
+        - suffix (str): A suffix to add to the filename (default: '').
+
+        """
+        
         self.tissue.write_h5ad(os.path.join(self.dir_path, f'tissue_{self.filename}{suffix}.h5ad'), compression="gzip")
 
         logging.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
 
     def save_anndata(self, suffix=''):
+        """
+        Save adata object.
+
+        Parameters:
+        - suffix (str): A suffix to add to the filename (default: '').
+        
+        """
         # save anndata file
         self.adata.write_h5ad(os.path.join(self.dir_path, f'{self.filename}{suffix}.h5ad'), compression="gzip")
 
         logging.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
     
     def save_community_labels(self):
-        # save community labels from anndata file
+        """Save community labels from anndata file."""
+
         self.adata.obs[f'tissue_{self.method_key}'].to_csv(os.path.join(self.dir_path, f'{self.filename}.csv'))
 
         logging.info(f'Saved community labels after clustering as a part of original anndata file to {self.filename}.csv')
 
     def save_mixture_stats(self):
-        # save cell mixture statistics
+        """Save cell mixture statistics, which contains number of cells of specific types per community."""
+        
         self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))

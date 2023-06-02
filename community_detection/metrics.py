@@ -18,9 +18,34 @@ def timeit(func):
     return timeit_wrapper
 
 def entropy2D(image):
+    """
+    Calculate the 2D Shannon entropy of an image.
+
+    Parameters:
+    - image (numpy.ndarray): The input image as a 2D NumPy array.
+
+    Returns:
+    - float: The Shannon entropy value of the image.
+    """
     return skimage.measure.shannon_entropy(image)
 
 def scatteredness2D(image, kernel):
+    """
+    Calculate the scatteredness measure of a 2D binary image.
+
+    The scatteredness measure quantifies the degree of scattered or isolated regions in a binary image. It is calculated
+    as the ratio of the number of connected components (objects) in the image to the total number of non-zero elements.
+    The measure is further corrected based on the size of the neighborhood kernel.
+
+    Parameters:
+    - image (numpy.ndarray): The input binary image as a 2D NumPy array.
+    - kernel (numpy.ndarray): The neighborhood kernel used for connectivity. It should be a 2D binary array,
+                               typically representing 4 or 8 neighbors connectivity.
+
+    Returns:
+    - float: The scatteredness measure of the image.
+    """
+
     _, num_objects = scipy.ndimage.label(image, structure=kernel, output=None)  # this assumes 4 neighbors connectivity
     # # idea for scatteredness was to compute the number of connected components and divide it with number of existing non-zero elements
     # # but this measure does not contain the information on percentage of non-zero elements in the matrix.
@@ -33,6 +58,22 @@ def scatteredness2D(image, kernel):
     return scatteredness
 
 def calculate_spatial_metrics(adata, unique_cell_type, downsample_rate, annotation):
+    """
+    This function calculates cell type-specific global metrics, including entropy and scatteredness.
+
+    Parameters:
+    - adata (anndata.AnnData): Annotated data object containing spatial transcriptomics data.
+    - unique_cell_type (list or array-like): List of unique cell types to calculate metrics for.
+    - downsample_rate (int): The downsampling rate used to resize the tissue window.
+    - annotation (str): Name of the column in 'adata.obs' that contains the cell type annotations.
+
+    Returns:
+    - list: A list containing the following spatial metrics for each cell type:
+            * entropy (pd.Series): Entropy values for each cell type.
+            * scatteredness (pd.Series): Scatteredness values for each cell type.
+            * cell_t_images (dict): Dictionary mapping cell types to their corresponding tissue window images.
+    """
+
     # calculate cell type specific global metrics
     adata.obs['x_coor'] = (adata.obsm['spatial'][:, 0])
     adata.obs['y_coor'] = (adata.obsm['spatial'][:, 1])
