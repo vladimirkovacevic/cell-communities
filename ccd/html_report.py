@@ -6,7 +6,7 @@ from collections import defaultdict
 from .metrics import timeit
 from pathlib import Path
 
-from .constants import BOXPLT_C_INDEX, COLORPLT_C_INDEX, CMIXT_C_INDEX 
+from .constants import BOXPLT_C_INDEX, COLORPLT_C_INDEX, CMIXT_C_INDEX, CT_COLORPLT_INDEX
 
 def get_base64_encoded_img(path):
     """
@@ -31,30 +31,24 @@ def get_css():
     """
 
     return r'''
-        img { width:100%; height:100%}
-        table, th, td {
-        border: 0px solid black;
+        img { 
+            width:100%;
+            height:100%
         }
-        .twobytwo {
+        table, th, td {
+            border: 0px solid black;
+        }
+        .bordered {
             border: 1px solid black;
         }
         hr {
-        width: 100%;
+            width: 100%;
         }
         .rightpad {
             padding: 3px 15px;
         }
         .shrink > img {
             max-width: 50vw;
-        }
-        .shrinkmore > img {
-            max-width: 40vw;
-        }
-        .tableSmaller img {
-            max-width: 70vw;
-        }
-        .lastTable img {
-            max-width: 60vw;
         }
         table.center {
             margin-left: auto; 
@@ -73,8 +67,8 @@ def get_css():
             padding-bottom: 2.5rem;
         }
         .page-container {
-        position: relative;
-        min-height: 100vh;
+            position: relative;
+            min-height: 100vh;
         }
         .pad20{
             padding: 0px 20px 0px;
@@ -86,6 +80,11 @@ def get_css():
         }
         .centeredSmall{
             width: 70%;
+            margin: auto;
+            text-align: center;
+        }
+        .centeredCtPlot{
+            width: 50%;
             margin: auto;
             text-align: center;
         }
@@ -178,7 +177,8 @@ def get_table_plots(path):
     celltype_table = ""
     cell_mixtures = ""
     hist_cell_number = ""
-    for root, dirs, files in os.walk(path):
+    ct_colorplots = defaultdict(list)
+    for root, _, files in os.walk(path):
         for name in files:
             if name.startswith("celltype_table"):
                 celltype_table = os.path.join(root, name)
@@ -186,6 +186,9 @@ def get_table_plots(path):
                 cell_mixtures = os.path.join(root, name)
             if name.startswith("window_cell_num_hist"):
                 hist_cell_number = os.path.join(root, name)
+            if name.startswith("ct_colorplot"):
+                ct_colorplots[name.split("_")[CT_COLORPLT_INDEX]].append(os.path.join(root, name))
+    
     return f'''
         <table>
             <thead>
@@ -201,9 +204,11 @@ def get_table_plots(path):
             </tr>
             </tbody>
         </table>
+        <div class="centeredCtPlot">
+            {make_table(ct_colorplots, columns=2, comment="Cell type colorplots")}
+        </div>
         <hr>
     '''
-
 
 def per_community_content(path, plotting_level):
     """
@@ -277,7 +282,7 @@ def make_table(plot_dict, columns, comment):
             rows += f'<tr>{row}</tr>'
         content += f'''
         <table style="border: 1px solid black;">
-            <tbody class="twobytwo">
+            <tbody>
             {rows}
             </tbody>
         </table>
@@ -312,11 +317,9 @@ def annotation_and_communities_figures(path):
     Returns:
     - tuple: A tuple containing the paths of the annotation and communities figures.
     """
-
-    num_dirs = 0
     annotations = []
     communities = []
-    for root, dirs, files in os.walk(path):
+    for root, dirs, _ in os.walk(path):
         for dir in dirs:
             for file in os.listdir(os.path.join(root, dir)):
                 if file.startswith("cell_type_anno"):
