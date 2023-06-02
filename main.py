@@ -5,8 +5,8 @@ import time
 import argparse as ap
 import scanpy as sc
 
-from community_detection import *
-from community_detection_algo import CommunityDetection
+from ccd import *
+from community_detection import CommunityDetection
 
 if __name__ == '__main__':
     start_time = time.perf_counter()
