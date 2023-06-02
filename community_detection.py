@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 
 from anndata import AnnData
 from typing import List
-from community_detection import *
+from ccd import *
 
 
 class CommunityDetection():

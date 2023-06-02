@@ -11,7 +11,7 @@ from anndata import AnnData
 from tqdm.auto import tqdm
 
 from .metrics import timeit
-from community_detection import CommunityClusteringAlgo
+from ccd import CommunityClusteringAlgo
 
 
 class SlidingWindow(CommunityClusteringAlgo):
