@@ -232,7 +232,7 @@ class CommunityClusteringAlgo(ABC):
         Calculate cell type percentages per cluster - community and save it in pandas.DataFrame object. 
         
         Percentages are calculated globaly for all cells with single class label. 
-        This is saved in adata.uns['cell mixtures'] for further use by plot fn.
+        This is saved in self.tissue.uns['cell mixtures'] for further use by plot fn.
         Columns of total cell count per class and percentage of tissue per cluster are added.
         Row of total cell type count is added. DataFrame with additional columns and row is saved in adata.uns['cell mixture stats']
         """
@@ -628,6 +628,6 @@ class CommunityClusteringAlgo(ABC):
         logging.info(f'Saved community labels after clustering as a part of original anndata file to {self.filename}.csv')
 
     def save_mixture_stats(self):
-        """Save cell mixture statistics."""
+        """Save cell mixture statistics, which contains number of cells of specific types per community."""
         
         self.tissue.uns['cell mixtures'].to_csv(os.path.join(self.dir_path, f'cell_mixture_stats_{self.params_suffix}.csv'))
