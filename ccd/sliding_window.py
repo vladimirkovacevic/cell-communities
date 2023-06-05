@@ -264,6 +264,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             partial_results = pool.map(self.community_calling_partial, split_df)
         
         self.adata.obs[f'tissue_{self.method_key}'] = pd.concat(partial_results)
+        self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
     def community_calling_partial(self, df):
         x_min = self.adata.obs['Centroid_X'].min()
@@ -297,6 +298,6 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                     for key in set(cell_labels_all) | set(cell_labels)
                 }
             max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else 'unknown'
-            result[index] = max_vote_label.astype('category')
+            result[index] = max_vote_label
         
         return result
