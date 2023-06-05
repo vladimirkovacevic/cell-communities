@@ -190,6 +190,7 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         # copy clustering results from subwindows to cells of those subwindows in adata object
         self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(leiden_max_vote.loc[self.adata.obs['window_spatial']])
+        self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
         logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
     
@@ -296,6 +297,6 @@ class SlidingWindowMultipleSizes(SlidingWindow):
                     for key in set(cell_labels_all) | set(cell_labels)
                 }
             max_vote_label = max(cell_labels_all, key=cell_labels_all.get) if cell_labels_all != {} else 'unknown'
-            result[index] = max_vote_label
+            result[index] = max_vote_label.astype('category')
         
         return result
