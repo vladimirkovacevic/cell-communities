@@ -1,6 +1,9 @@
 # Cell Communities Clusterization on ST Data
 
-This Python script performs cell communities clusterization on single and multiple slices of spatial transcriptomics (ST) data. It provides an implementation of the Sliding Window algorithm to analyze the cell community in ST data.
+Sequencing technology advances applied in spatial transcriptomics opened a new window into the tissue microenvironment. By capturing gene expression profiles of individual cells along with their spatial coordinates, researchers have gained the ability to accurately ascertain cell types and their respective functions. While some cell types are known to coexist within various regions of the tissue, the co-occurrence of many others remains elusive. The proposed Cell Community Detection (CCD) algorithm addresses this challenge by offering a novel computational approach for identifying tissue domains with a significant mixture of particular cell types. The CCD algorithm divides the tissue using sliding windows, quantifies the proportion of each cell type within each window, and groups together windows with similar cell type mixtures. By employing majority voting, the algorithm assigns a community label to each cell based on the covered windows. Notably, CCD accommodates multiple window sizes and enables the simultaneous analysis of multiple slides from the same tissue. Its Python implementation with a flexible user interface enables the processing of datasets with tens of thousands of cells in sub-minute execution time.
+
+**Keywords**: spatial transcriptomics, cell co-occurance, cell community, bioinformatics,
+
 ## Prerequisites
 - Python 3.7 or higher
 - leidenalg
