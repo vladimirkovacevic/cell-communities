@@ -190,6 +190,7 @@ class SlidingWindow(CommunityClusteringAlgo):
 
         # copy clustering results from subwindows to cells of those subwindows in adata object
         self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(leiden_max_vote.loc[self.adata.obs['window_spatial']])
+        self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
         logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
     
@@ -263,6 +264,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             partial_results = pool.map(self.community_calling_partial, split_df)
         
         self.adata.obs[f'tissue_{self.method_key}'] = pd.concat(partial_results)
+        self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
     def community_calling_partial(self, df):
         x_min = self.adata.obs['Centroid_X'].min()
