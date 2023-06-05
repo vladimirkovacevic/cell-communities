@@ -455,6 +455,12 @@ class CommunityClusteringAlgo(ABC):
                         # init image
                         mixture_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
 
+                        # cell spots in grey color
+                        if color_system == 'hsv':
+                            mixture_image[self.adata.obsm['spatial'][:,0]-cx_min, self.adata.obsm['spatial'][:,1]-cy_min, :] = [0, 0, 0.8]
+                        elif color_system == 'rgb':
+                            mixture_image[self.adata.obsm['spatial'][:,0]-cx_min, self.adata.obsm['spatial'][:,1]-cy_min, :] = [0.8, 0.8, 0.8]
+
                         for window in data_df.iterrows():
                             wx = int(window[0].split("_")[0])
                             wy = int(window[0].split("_")[1])
@@ -468,15 +474,8 @@ class CommunityClusteringAlgo(ABC):
                             rgb_image = mixture_image
                         # plot the colored window image of the cell scatterplot
                         fig, ax = plt.subplots(nrows=1, ncols=1)
-                        # cell scatterplot for visual spatial reference
-                        plt.scatter(x = self.adata.obsm['spatial'][:,0]-cx_min, y=self.adata.obsm['spatial'][:,1]-cy_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
-                        # mask of window positions
-                        window_mask = rgb_image[:,:,1] != 0
-                        # mask adjusted to alpha channel and added to rgb image
-                        window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
-                        rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
                         # plot windows, where empty areas will have alpha=0, making them transparent
-                        plt.imshow(rgba_image, zorder=2)
+                        plt.imshow(rgb_image)
                         plt.axis('off')
                         ax.grid(visible=False)
                         ax.set_title(f'{color_system.upper()} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
@@ -512,22 +511,18 @@ class CommunityClusteringAlgo(ABC):
         for window_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
             windows_mixture = self.tissue[self.tissue.obsm['spatial'][:,3] == window_size]
             data_df = pd.DataFrame(windows_mixture.X/self.total_cell_norm, columns=windows_mixture.var.index, index=windows_mixture.obs.index)
-            rgb_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
             
             for cell_type in self.tissue.var.index:
+                rgb_image = np.zeros(shape=(cy_max-cy_min+1, cx_max-cx_min+1, 3), dtype=np.float32)
+                # fill cell spots with grey color
+                rgb_image[self.adata.obsm['spatial'][:,0]-cx_min, self.adata.obsm['spatial'][:,1]-cy_min, :] =  [0.8, 0.8, 0.8]
                 for window in data_df.iterrows():
                     wx = int(window[0].split("_")[0])
                     wy = int(window[0].split("_")[1])
                     rgb_image[int(wy*sliding_step-cy_min) : int(wy*sliding_step + window_size-cy_min), int(wx*sliding_step-cx_min) : int(wx*sliding_step + window_size-cx_min), :] = [window[1][cell_type], 0.5, 0.5]
                 
                 fig, ax = plt.subplots(nrows=1, ncols=1)
-                plt.scatter(x = self.adata.obsm['spatial'][:,0]-cx_min, y=self.adata.obsm['spatial'][:,1]-cy_min, c='#CCCCCC', marker='.', s=0.5, zorder=1)
-                
-                window_mask = rgb_image[:,:,0] != 0
-                window_alpha = (window_mask==True).astype(int)[..., np.newaxis]
-                rgba_image = np.concatenate([rgb_image, window_alpha], axis=2)
-                        
-                plt.imshow(rgba_image, zorder=2)
+                plt.imshow(rgb_image)
                 plt.axis('off')
                 ax.grid(visible=False)
                 ax.set_title(f'Percentage of {cell_type} (red channel of RGB) in:\n{self.adata.uns["sample_name"]}, win size {window_size}, step {sliding_step}')  
