@@ -40,7 +40,7 @@ class CommunityDetection():
         win_sizes = "_".join([i for i in self.params['win_sizes'].split(',')])
         self.params['project_name_orig'] = self.params['project_name']
         self.params['out_path_orig'] = self.params['out_path']
-        self.params['project_name'] += f"_r{self.params['resolution']}_ws{win_sizes}_en{self.params['entropy_thres']}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
+        self.params['project_name'] += f"_c{self.params['cluster_algo']}_r{self.params['resolution']}_ws{win_sizes}_en{self.params['entropy_thres']}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
         self.params['out_path'] = os.path.join(self.params['out_path'], self.params['project_name'])
 
         if not os.path.exists(self.params['out_path']):
@@ -100,10 +100,10 @@ class CommunityDetection():
         if self.params['cluster_algo'] == 'leiden':
             sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
         elif self.params['cluster_algo'] == 'spectral':
-            sc = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
-            merged_tissue.obs[self.params['cluster_algo']] = (sc.fit_predict(merged_tissue.obsp['connectivities'])).astype('str')
-            # sc = SpectralClustering(n_clusters=5, eigen_solver='arpack', random_state=0, affinity='precomputed_nearest_neighbors', n_jobs=5)
-            # merged_tissue.obs[self.params['cluster_algo']] = (sc.fit_predict(merged_tissue.obsp['distances'])).astype('str')
+            spcl = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
+            merged_tissue.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue.obsp['connectivities'])).astype('str')
+            # spcl = SpectralClustering(n_clusters=5, eigen_solver='arpack', random_state=0, affinity='precomputed_nearest_neighbors', n_jobs=5)
+            # merged_tissue.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue.obsp['distances'])).astype('str')
             # merged_tissue.obs[self.params['cluster_algo']] = (spectral_clustering(merged_tissue.obsp['connectivities'], n_clusters=5, eigen_solver='arpack', random_state=0)).astype('str')
         elif self.params['cluster_algo'] == 'agglomerative':
             # ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='ward', distance_threshold=None)
