@@ -147,8 +147,10 @@ class CommunityClusteringAlgo(ABC):
         Saves the figure as 'cell_type_annotation.png' in the directory path.
 
         """
-        figure, ax = plt.subplots(nrows=1, ncols=1)
+        figure, ax = plt.subplots(figsize=(15,15))
         sc.pl.spatial(self.adata, color=[self.annotation], spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
+        plt.tight_layout()
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
         plt.close()
     
@@ -210,7 +212,7 @@ class CommunityClusteringAlgo(ABC):
         # sc.pl.spatial(self.tissue, color='leiden', spot_size=1)
         # # plot clustering after majority voting for each subwindow
         # sc.pl.spatial(self.tissue, color='leiden_max_vote', spot_size=1)    
-        figure, ax = plt.subplots(nrows=1, ncols=1)
+        figure, ax = plt.subplots(figsize=(15, 15))
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
@@ -218,6 +220,10 @@ class CommunityClusteringAlgo(ABC):
         self.cluster_palette = [cluster_palette[lab] for lab in int_lab]
         self.cluster_palette.append('#CCCCCC')
         sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        handles, labels = ax.get_legend_handles_labels()
+        order = [el[0] for el in sorted(enumerate(labels), key=lambda x: float(x[1]) if x[1] != "unknown" else float('inf'))]
+        plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc='upper left', bbox_to_anchor=(1.04, 1))
+        plt.tight_layout()
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
         plt.close()
 

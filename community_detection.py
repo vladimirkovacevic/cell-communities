@@ -51,7 +51,7 @@ class CommunityDetection():
 
             algo = SlidingWindowMultipleSizes(slice, slice_id, file, **self.params)
             # plot original annotation
-            if self.params['plotting'] > 1:
+            if self.params['plotting'] > 0:
                 algo.plot_annotation()
             # run algorithm for feature extraction and cell type filtering based on entropy and scatteredness
             algo.run()
@@ -136,9 +136,10 @@ class CommunityDetection():
             self.plot_cell_abundance_total(algo_list, self.params['out_path'])
             self.plot_cluster_abundance_total(algo_list, self.params['out_path'])
         if self.params['plotting'] > 3:
-            self.plot_cell_perc_in_community_per_slice(algo_list, self.params['out_path'])
             self.plot_cell_abundance_per_slice(algo_list, self.params['out_path'])
             self.plot_cluster_abundance_per_slice(algo_list, self.params['out_path'])
+        if self.params['plotting'] > 4:
+            self.plot_cell_perc_in_community_per_slice(algo_list, self.params['out_path'])
 
         generate_report(self.params)
     
