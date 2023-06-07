@@ -95,26 +95,7 @@ class CommunityDetection():
         merged_tissue.X[np.isnan(merged_tissue.X)] = 0.0
 
         # CLUSTERING (WINDOW_LABELS)
-        sc.pp.neighbors(merged_tissue, use_rep='X')
-            
-        if self.params['cluster_algo'] == 'leiden':
-            sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
-        elif self.params['cluster_algo'] == 'spectral':
-            spcl = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
-            merged_tissue.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue.obsp['connectivities'])).astype('str')
-            # spcl = SpectralClustering(n_clusters=5, eigen_solver='arpack', random_state=0, affinity='precomputed_nearest_neighbors', n_jobs=5)
-            # merged_tissue.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue.obsp['distances'])).astype('str')
-            # merged_tissue.obs[self.params['cluster_algo']] = (spectral_clustering(merged_tissue.obsp['connectivities'], n_clusters=5, eigen_solver='arpack', random_state=0)).astype('str')
-        elif self.params['cluster_algo'] == 'agglomerative':
-            # ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='ward', distance_threshold=None)
-            # ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='complete', distance_threshold=None)
-            # ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='average', distance_threshold=None)
-            ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='single', distance_threshold=None)
-            
-            merged_tissue.obs[self.params['cluster_algo']] = (ac.fit_predict(merged_tissue.X)).astype('str')
-        else:
-            logging.error('Unsupported clustering algorithm')
-            sys.exit(1)
+        self.cluster(merged_tissue)
 
         for slice_id, algo in enumerate(algo_list):
             # extract clustering data from merged_tissue
@@ -189,6 +170,36 @@ class CommunityDetection():
             iters += 1
         
         return ('150','50')
+
+    @timeit
+    def cluster(self, merged_tissue):
+        """
+        Perform clustering on merged tissue data from all slices.
+        Supported clustering algorithms are:
+        'leiden' - Leiden (scanpy) with neighbors similarity metric,
+        'spectral' - Spectral (skimage) with neighbors similarity metric, and
+        'agglomerative' - Agglomerative (skimage) with 'ward' linkage type
+        and 'euclidian' distance metric.
+        Cluster labels are stored in merged_tissue.obs[cluster_algo]
+        and updated inplace.
+
+        Parameters:
+        - merged_tissue (AnnData): AnnData object containin features of all slices
+
+        """
+        if self.params['cluster_algo'] == 'leiden':
+            sc.pp.neighbors(merged_tissue, use_rep='X')
+            sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
+        elif self.params['cluster_algo'] == 'spectral':
+            sc.pp.neighbors(merged_tissue, use_rep='X')
+            spcl = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
+            merged_tissue.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue.obsp['connectivities'])).astype('str')
+        elif self.params['cluster_algo'] == 'agglomerative':
+            ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='ward', distance_threshold=None)
+            merged_tissue.obs[self.params['cluster_algo']] = (ac.fit_predict(merged_tissue.X)).astype('str')
+        else:
+            logging.error('Unsupported clustering algorithm')
+            sys.exit(1)
     
     def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
         """
