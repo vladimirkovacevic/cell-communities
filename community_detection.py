@@ -164,7 +164,7 @@ class CommunityDetection():
         unknown_label = []
         for (algo, ax) in zip(algo_list, axes.flatten()):
             palette = algo.cluster_palette if clustering else algo.annotation_palette
-            sc.pl.spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False)
+            plot_spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False)
             ax.get_legend().remove()
             ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
             hands, labs = ax.get_legend_handles_labels()
