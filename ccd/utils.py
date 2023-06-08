@@ -22,6 +22,7 @@ def plot_spatial(
     color: List[str],
     ax: Axes,
     spot_size: float,
+    img_key: str = None,
     title: str = None,
     groups = None,
     palette: List[str] = None,
@@ -29,8 +30,17 @@ def plot_spatial(
     frameon: bool = False
 ):
     """
-    Scatter plot in spatial coordinates. A wrapper around scanpy's pl.spatial to correct inversion of y-axis.
+    Scatter plot in spatial coordinates. A wrapper around scanpy's pl.spatial to correct inversion of y-axis. 
+    Standard plots have coordinates in 'lower left' while images are considered
+    to start from 'upper left'.scanpy assumes that we will always
+    plot some sort of staining image. if we do not provide image, scanpy
+    will flip yaxis for us to get back to the standard plot coordinates.
+    that causes inversion of our plotting figures so we wrapped scanpy's
+    pl.spatial. utils.py is created for such wrappers, timeit decorator and
+    everything else that should be globally accessible and does not belong
+    to any specific class.
 
     """
-    ax.invert_yaxis()
+    if img_key is None:
+        ax.invert_yaxis()
     sc.pl.spatial(adata, color=color, spot_size=spot_size, ax=ax, show=show, frameon=frameon, title=title, palette=palette, groups=groups)
