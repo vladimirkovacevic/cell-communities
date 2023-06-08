@@ -9,6 +9,7 @@ import scanpy as sc
 from functools import reduce
 from itertools import cycle
 from matplotlib import pyplot as plt
+from collections import defaultdict
 
 from anndata import AnnData
 from typing import List
@@ -26,6 +27,8 @@ class CommunityDetection():
         self.params['annotation'] = annotation
         self.slices = slices
         self.file_names = file_names if file_names != None else [f"Slice_{id}" for id in range(len(slices))]
+        if self.params['win_sizes'] == 'NA' or self.params['sliding_steps'] == 'NA':
+            self.params['win_sizes'], self.params['sliding_steps'] = self.calc_optimal_win_size_and_slide_step()
 
     @timeit
     def run(self):
@@ -142,6 +145,31 @@ class CommunityDetection():
             self.plot_cell_perc_in_community_per_slice(algo_list, self.params['out_path'])
 
         generate_report(self.params)
+
+    @timeit
+    def calc_optimal_win_size_and_slide_step(self):
+        x_min, x_max = np.min(self.slices[0].obsm['spatial'][0]), np.max(self.slices[0].obsm['spatial'][0])
+        y_min, y_max = np.min(self.slices[0].obsm['spatial'][1]), np.max(self.slices[0].obsm['spatial'][1])
+        x_range, y_range = abs(abs(x_max) - abs(x_min)), abs(abs(y_max) - abs(y_min))
+
+        win_size = int(x_range // 100 if x_range < y_range else y_range // 100)
+        win_size = win_size + 1 if win_size & 1 else win_size
+
+        avg_covered = -1
+        iters = 0
+        MAX_ITERS = 10 
+        MIN_COVERED = 30
+        MAX_COVERED = 50
+        while (avg_covered < MIN_COVERED or avg_covered > MAX_COVERED) and iters < MAX_ITERS :
+            cell_to_loc = defaultdict(int)
+            for x, y in self.slices[0].obsm['spatial']:
+                cell_to_loc[(x // win_size, y // win_size)] += 1
+            
+            cell_to_loc.items()
+
+            iters += 1
+        
+        return ('150','50')
     
     def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
         """

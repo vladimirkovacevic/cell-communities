@@ -59,9 +59,6 @@ if __name__ == '__main__':
         else:
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
-    if args.win_sizes == 'NA' or args.sliding_steps == 'NA':
-        args.win_sizes, args.sliding_steps = calc_optimal_win_size_and_slide_step(slices[0])
-
     cd = CommunityDetection(slices, file_names=file_names, **vars(args))
     cd.run()
 
