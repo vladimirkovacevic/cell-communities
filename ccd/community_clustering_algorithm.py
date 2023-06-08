@@ -216,9 +216,8 @@ class CommunityClusteringAlgo(ABC):
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
-        int_lab = np.sort([int(lab) for lab in labels])
-        self.cluster_palette = [cluster_palette[lab] for lab in int_lab]
-        self.cluster_palette.append('#CCCCCC')
+        self.cluster_palette = {lab:cluster_palette[int(lab)] for lab in labels}
+        self.cluster_palette['unknown']='#CCCCCC'
         sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
         handles, labels = ax.get_legend_handles_labels()
         order = [el[0] for el in sorted(enumerate(labels), key=lambda x: float(x[1]) if x[1] != "unknown" else float('inf'))]
