@@ -10,7 +10,7 @@ import anndata as ad
 from anndata import AnnData
 from tqdm.auto import tqdm
 
-from .metrics import timeit
+from .utils import timeit
 from ccd import CommunityClusteringAlgo
 
 

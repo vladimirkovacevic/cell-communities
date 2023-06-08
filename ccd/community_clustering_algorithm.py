@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from skimage import color
 from matplotlib import pyplot as plt
 
-from .metrics import timeit
+from .utils import timeit, plot_spatial
 
 cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c564b", \
                   "#e377c2", "#b5bd61", "#17becf", "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", \
@@ -148,7 +148,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
         figure, ax = plt.subplots(figsize=(15,15))
-        sc.pl.spatial(self.adata, color=[self.annotation], spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        plot_spatial(self.adata, color=[self.annotation], spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
@@ -196,7 +196,6 @@ class CommunityClusteringAlgo(ABC):
         for cell_t in self.unique_cell_type:
             plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=250)
     
-
     @timeit
     def plot_clustering(self):
         """
@@ -218,7 +217,7 @@ class CommunityClusteringAlgo(ABC):
             labels = labels[labels!='unknown']
         self.cluster_palette = {lab:cluster_palette[int(lab)] for lab in labels}
         self.cluster_palette['unknown']='#CCCCCC'
-        sc.pl.spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
+        plot_spatial(self.adata, color=[f'tissue_{self.method_key}'], palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, show=False, frameon=False, title=f'{self.adata.uns["sample_name"]}')
         handles, labels = ax.get_legend_handles_labels()
         order = [el[0] for el in sorted(enumerate(labels), key=lambda x: float(x[1]) if x[1] != "unknown" else float('inf'))]
         plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc='upper left', bbox_to_anchor=(1.04, 1))
@@ -229,7 +228,6 @@ class CommunityClusteringAlgo(ABC):
     def calculate_spatial_cell_type_metrics(self):
         """Calculate spatial cell type metrics."""
         pass
-    
 
     @timeit
     def calculate_cell_mixture_stats(self):
@@ -360,11 +358,11 @@ class CommunityClusteringAlgo(ABC):
                 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
                 fig.subplots_adjust(wspace=0.35)
 
-                sc.pl.spatial(self.adata, groups=ct_ind, color=self.annotation, palette=self.annotation_palette, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
+                plot_spatial(self.adata, groups=ct_ind, color=self.annotation, palette=self.annotation_palette, spot_size=self.spot_size, ax=ax[0], show=False, frameon=False)
                 ax[0].set_title(f'Cell types')
                 ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 
-                sc.pl.spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette=[cluster_palette[int(cluster[0])]], spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
+                plot_spatial(self.adata, groups=[cluster[0]], color=f'tissue_{self.method_key}', palette=[cluster_palette[int(cluster[0])]], spot_size=self.spot_size, ax=ax[1], show=False, frameon=False)
                 ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
                 ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')

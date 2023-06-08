@@ -1,10 +1,11 @@
 import logging
 
 from .community_clustering_algorithm import CommunityClusteringAlgo
-from .metrics import *
 from .html_report import generate_report
 from .metrics import calculate_spatial_metrics
+from .utils import timeit, plot_spatial
 from .constants import *
+from .metrics import *
 
 try:
     from .sliding_window import SlidingWindow
