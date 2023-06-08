@@ -21,10 +21,10 @@ def plot_spatial(
     adata,
     color: List[str],
     ax: Axes,
-    title: str,
     spot_size: float,
+    title: str = None,
     groups = None,
-    cluster_palette: List[str] = None,
+    palette: List[str] = None,
     show: bool = False,
     frameon: bool = False
 ):
@@ -33,4 +33,4 @@ def plot_spatial(
 
     """
     ax.invert_yaxis()
-    sc.pl.spatial(adata, color=color, spot_size=spot_size, ax=ax, show=show, frameon=frameon, title=title, palette=cluster_palette, groups=groups)
+    sc.pl.spatial(adata, color=color, spot_size=spot_size, ax=ax, show=show, frameon=frameon, title=title, palette=palette, groups=groups)
