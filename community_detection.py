@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import seaborn as sns
 import scanpy as sc
+import random
 
 from functools import reduce
 from itertools import cycle
@@ -148,28 +149,45 @@ class CommunityDetection():
 
     @timeit
     def calc_optimal_win_size_and_slide_step(self):
+        """
+        Method for calculating the optimal window size and sliding step.
+        Window size is calculated such that it covers between MIN_COVERED and MAX_COVERED cells.
+        Sliding step is set to the half of the window size.
+
+        """
+        MAX_ITERS = 10
+        MIN_COVERED = 30
+        MAX_COVERED = 50
+        AVG_COVERED_GOAL = (MAX_COVERED + MIN_COVERED) // 2
+        
         x_min, x_max = np.min(self.slices[0].obsm['spatial'][0]), np.max(self.slices[0].obsm['spatial'][0])
         y_min, y_max = np.min(self.slices[0].obsm['spatial'][1]), np.max(self.slices[0].obsm['spatial'][1])
         x_range, y_range = abs(abs(x_max) - abs(x_min)), abs(abs(y_max) - abs(y_min))
 
-        win_size = int(x_range // 100 if x_range < y_range else y_range // 100)
-        win_size = win_size + 1 if win_size & 1 else win_size
+        win_size = int(x_range // 50 if x_range < y_range else y_range // 50)
 
         avg_covered = -1
+        delta = -1
         iters = 0
-        MAX_ITERS = 10 
-        MIN_COVERED = 30
-        MAX_COVERED = 50
-        while (avg_covered < MIN_COVERED or avg_covered > MAX_COVERED) and iters < MAX_ITERS :
+        while iters < MAX_ITERS:
             cell_to_loc = defaultdict(int)
             for x, y in self.slices[0].obsm['spatial']:
                 cell_to_loc[(x // win_size, y // win_size)] += 1
             
-            cell_to_loc.items()
+            num_selected = int(len(cell_to_loc.items()) * 0.1)
+            avg_covered = sum(random.choices(list(cell_to_loc.values()), k=num_selected)) // num_selected
+            
+            if MIN_COVERED < avg_covered < MAX_COVERED:
+                break
 
+            delta = AVG_COVERED_GOAL - avg_covered
+            win_size += delta
             iters += 1
         
-        return ('150','50')
+        #closest doubly even number so that sliding step is also even number
+        win_size = win_size + ((win_size & 0b11) ^ 0b11) + 1 if win_size & 0b11 else win_size
+
+        return (str(win_size), str(win_size // 2))
     
     def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
         """
