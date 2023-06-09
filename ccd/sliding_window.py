@@ -42,8 +42,8 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.sliding_steps_list = [int(s) for s in self.sliding_steps.split(',')]
         assert len(self.win_sizes_list) == len(self.sliding_steps_list), \
             "The number of sliding steps must be equal to the number of window sizes."
-        win_sizes = "_".join([i for i in self.win_sizes_list])
-        sliding_steps = "_".join([i for i in self.params['sliding_steps'].split(',')])
+        win_sizes = "_".join([str(i) for i in self.win_sizes_list])
+        sliding_steps = "_".join([str(i) for i in self.sliding_steps_list])
         cluster_string = f"_r{self.params['resolution']}" if self.params['cluster_algo'] == 'leiden' else f"_nc{self.params['n_clusters']}"
         self.params_suffix = f"_sldwin_sl{self.slice_id}_c{self.params['cluster_algo']}{cluster_string}_ws{win_sizes}_ss{sliding_steps}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
         self.filename = self.adata.uns['sample_name']
