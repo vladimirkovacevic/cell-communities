@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--annotation', help='Annotation label for cell types', type=str, required=True)
     parser.add_argument('-o', '--out_path', help='Absolute path to store outputs', type=str, default='results')
     parser.add_argument('-c', '--cluster_algo', help='Clustering algorithm', type=str, required=False, default='leiden', choices={'leiden', 'spectral', 'agglomerative'})
-    parser.add_argument('-r', '--resolution', help='All: Resolution of the clustering algorithm', type=float, required=False, default=0.2)
+    parser.add_argument('-r', '--resolution', help='Resolution of leiden clustering algorithm. Ignored for spectral and agglomerative.', type=float, required=False, default=0.2)
     parser.add_argument('-s', '--spot_size', help='Size of the spot on plot', type=float, required=False, default=30)
     parser.add_argument('-v', '--verbose', help='Show logging messages. 0 - Show warrnings, >0 show info, <0 no output generated.', type=int, default=0)
     parser.add_argument('-p', '--plotting', help='Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - save all plots (cell type images, statisctics and cell mixture plots)', type=int, required=False, default=2)

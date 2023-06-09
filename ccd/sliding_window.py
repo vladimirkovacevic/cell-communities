@@ -42,8 +42,10 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.sliding_steps_list = [int(s) for s in self.sliding_steps.split(',')]
         assert len(self.win_sizes_list) == len(self.sliding_steps_list), \
             "The number of sliding steps must be equal to the number of window sizes."
-        win_sizes = "_".join([str(i) for i in self.win_sizes_list])
-        self.params_suffix = f"_sldwin_sl{self.slice_id}_c{self.cluster_algo}_r{self.resolution}_ws{win_sizes}_en{self.entropy_thres}_sct{self.scatter_thres}_dwr{self.downsample_rate}_mcc{self.min_cells_coeff}"
+        win_sizes = "_".join([i for i in self.win_sizes_list])
+        sliding_steps = "_".join([i for i in self.params['sliding_steps'].split(',')])
+        cluster_string = f"_r{self.params['resolution']}" if self.params['cluster_algo'] == 'leiden' else f"_nc{self.params['n_clusters']}"
+        self.params_suffix = f"_sldwin_sl{self.slice_id}_c{self.params['cluster_algo']}{cluster_string}_ws{win_sizes}_ss{sliding_steps}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
         self.filename = self.adata.uns['sample_name']
         self.dir_path = os.path.join(self.adata.uns['algo_params']['out_path'], self.filename)
         # create results folder

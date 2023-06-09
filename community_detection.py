@@ -38,9 +38,11 @@ class CommunityDetection():
 
         algo_list = []
         win_sizes = "_".join([i for i in self.params['win_sizes'].split(',')])
+        sliding_steps = "_".join([i for i in self.params['sliding_steps'].split(',')])
         self.params['project_name_orig'] = self.params['project_name']
         self.params['out_path_orig'] = self.params['out_path']
-        self.params['project_name'] += f"_c{self.params['cluster_algo']}_r{self.params['resolution']}_ws{win_sizes}_en{self.params['entropy_thres']}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
+        cluster_string = f"_r{self.params['resolution']}" if self.params['cluster_algo'] == 'leiden' else f"_nc{self.params['n_clusters']}"
+        self.params['project_name'] += f"_c{self.params['cluster_algo']}{cluster_string}_ws{win_sizes}_ss{sliding_steps}_sct{self.params['scatter_thres']}_dwr{self.params['downsample_rate']}_mcc{self.params['min_cells_coeff']}"
         self.params['out_path'] = os.path.join(self.params['out_path'], self.params['project_name'])
 
         if not os.path.exists(self.params['out_path']):
