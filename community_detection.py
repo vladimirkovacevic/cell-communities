@@ -17,11 +17,23 @@ from typing import List
 from ccd import *
 
 class CommunityDetection():
+    """
+    Class for performing community detection on a set of slices.
+    """
+
     def __init__(
             self,
             slices: List[AnnData],
             annotation: str,
             **kwargs) -> None:
+        """
+        Initialize the CommunityDetection object.
+
+        Parameters:
+        - slices (List[AnnData]): A list of AnnData objects representing the slices of a tissue.
+        - annotation (str): The annotation string.
+        - **kwargs: Additional keyword arguments.
+        """
         self.params = { **COMMUNITY_DETECTION_DEFAULTS, **kwargs }
         self.params['annotation'] = annotation
         self.slices = slices
@@ -40,6 +52,48 @@ class CommunityDetection():
         
     @timeit
     def run(self):
+        """
+        Executes the community detection algorithm.
+
+        This method performs community detection using the specified parameters and data slices. It follows the following steps:
+
+        1. Data Processing Loop:
+        - Iterates over each data slice, identified by `slice_id` and the corresponding file name.
+        - Initializes a `SlidingWindowMultipleSizes` algorithm object, `algo`, with the slice and other parameters.
+        - Optionally plots the original annotation if the plotting level is greater than 0.
+        - Runs the algorithm for feature extraction and cell type filtering based on entropy and scatteredness.
+        - Optionally plots the histogram of cell sum per window if the plotting level is greater than 1.
+        - Calculates entropy, scatteredness, and cell type images using the `calculate_spatial_metrics` function.
+        - Optionally plots binary images of cell types' spatial positions if the plotting level is greater than 3.
+        - Filters out cell types that are not localized based on calculated metrics.
+        - Appends the `algo` object to the `algo_list`.
+
+        2. Annotation Plotting:
+        - If the plotting level is greater than 0 and there are multiple algorithm objects in `algo_list`, plots the annotation for all slices together.
+
+        3. Tissue Merging:
+        - Merges the tissue Anndata objects from all algorithm objects into a single Anndata object, `merged_tissue`.
+
+        4. Clustering:
+        - Performs clustering on the merged tissue using the specified clustering algorithm.
+
+        5. Algorithm Execution:
+        - Performs community calling using the majority voting method on each algorithm object.
+        - Saves the Anndata objects, community labels, and tissue data for further use.
+        - Optionally plots the clustering results if the plotting level is greater than 0.
+        - If the `skip_stats` flag is not active, calculates cell mixture statistics, saves them, and generates corresponding plots.
+        - Optionally saves the final tissue with statistics.
+    
+        6. Clustering Plotting:
+        - If the plotting level is greater than 0 and there are multiple algorithm objects in `algo_list`, plots the clustering results for all slices together.
+
+        7. Additional Plots:
+        - Generates additional plots based on the plotting level and the data from `algo_list`. These include cell type mixtures, cell abundance, and cluster abundance plots.
+
+        8. Report Generation:
+        - Generates a HTML report o the results.
+        """
+
         if not os.path.exists(self.params['out_path']):
             os.makedirs(self.params['out_path'])
 
@@ -191,6 +245,18 @@ class CommunityDetection():
 
 
     def log_win_size_info_per_slice(self, slice, fname, win_size, slide_step, x_range, y_range):
+        """
+        Logs window size information for a given slice.
+
+        Parameters:
+        - slice: The slice.
+        - fname: The filename of the slice.
+        - win_size: The size of the window.
+        - slide_step: The sliding step for the window.
+        - x_range: The range of x-coordinates.
+        - y_range: The range of y-coordinates.
+
+        """
         cell_to_loc = defaultdict(int)
         for x, y in slice.obsm['spatial']:
             cell_to_loc[(x // win_size, y // win_size)] += 1
