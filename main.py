@@ -1,11 +1,9 @@
-import os
 import logging
 import time
 
 import argparse as ap
 import scanpy as sc
 
-from ccd import *
 from community_detection import CommunityDetection
 
 if __name__ == '__main__':
@@ -44,16 +42,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.verbose == 0:
-        logging.basicConfig(level=logging.WARNING, force=True)
+        logging.basicConfig(level=logging.WARNING, force=True, format='%(message)s')
     elif args.verbose > 0:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
     else:
-        logging.basicConfig(level=logging.NOTSET)
+        logging.basicConfig(level=logging.NOTSET, format='%(message)s')
     
     slices = []
-    file_names = []
     for file in args.files.split(','):
-        file_names.append(file)
         # READ CELL TYPE ADATA
         if file.endswith('.h5ad'):
             adata = sc.read(file)
@@ -61,7 +57,7 @@ if __name__ == '__main__':
         else:
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
-    cd = CommunityDetection(slices, file_names=file_names, **vars(args))
+    cd = CommunityDetection(slices, **vars(args))
     cd.run()
 
     end_time = time.perf_counter()
