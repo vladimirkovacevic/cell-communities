@@ -38,8 +38,9 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 - `-a, --annotation`: Annotation label for cell types. 
 ### Optional arguments: 
 - `-t, --tfile`: File path to Anndata object with calculated cell mixtures for data windows, output of `calc_feature_matrix`. 
-- `-o, --out_path`: Absolute path to store outputs. 
-- `-r, --resolution`: Resolution of the clustering algorithm. Default is `0.2`. 
+- `-o, --out_path`: Absolute path to store outputs.
+- `-c, --cluster_algo`: Clustering algorithm for cell communities. Available: leiden, spectral, agglomerative. Default is `leiden`.
+- `-r, --resolution`: Resolution of leiden clustering algorithm. Ignored for spectral and agglomerative. Default is `0.2`. 
 - `-s, --spot_size`: Size of the spot on plot. Default is `30`. 
 - `-v, --verbose`: Show logging messages. `0` shows warnings, `>0` shows info, `<0` shows no output generated. Default is `0`. 
 - `p, --plotting`: Save plots flag.`0`- No plotting/saving, `1` - save clustering plot, `2` - save all plots (cell type images statistics, and cell mixture plots). Default is `2`.
@@ -60,6 +61,7 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 - `--min_num_celltype`: Minimum number of cell types that have more than --min_perc_celltype in a cluster, for a cluster to be shown in plot_celltype_table(). Default is `2`.
 - `--min_perc_celltype`: Minimum percentage of cells of a cell type which at least min_num_celltype cell types need to have to show a cluster in plot_celltype_table(). Default is `15`.
 - `--color_plot_system`: Color system for display of cluster specific windows. Available: rgb, hsv. Default is `rgb`.
+- `--n_clusters`: Number of clusters for spectral and agglomerative clustering. Ignored for leiden. Default is `None`.
 ## Example
 
 #### Download data: 
