@@ -5,7 +5,6 @@ import os
 import pandas as pd
 import seaborn as sns
 import scanpy as sc
-import random
 
 from functools import reduce
 from itertools import cycle
@@ -199,10 +198,8 @@ class CommunityDetection():
             for x, y in self.slices[0].obsm['spatial']:
                 cell_to_loc[(x // win_size, y // win_size)] += 1
             
-            # taking 10% of total windows which gives a good estimate while improving performance
-            num_selected = int(len(cell_to_loc) * 0.1)
             # using median instead of mean because many windows can be empty (space is not fully occupied by tissue)
-            avg_covered = np.median(random.choices(list(cell_to_loc.values()), k=num_selected))
+            avg_covered = np.median(list(cell_to_loc.values()))
             
             if MIN_COVERED < avg_covered < MAX_COVERED:
                 break
