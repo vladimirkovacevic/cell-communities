@@ -40,11 +40,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.verbose == 0:
-        logging.basicConfig(level=logging.WARNING, force=True)
+        logging.basicConfig(level=logging.WARNING, force=True, format='%(message)s')
     elif args.verbose > 0:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
     else:
-        logging.basicConfig(level=logging.NOTSET)
+        logging.basicConfig(level=logging.NOTSET, format='%(message)s')
     
     slices = []
     for file in args.files.split(','):
