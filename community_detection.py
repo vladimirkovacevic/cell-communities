@@ -25,6 +25,12 @@ class CommunityDetection():
         self.params = { **COMMUNITY_DETECTION_DEFAULTS, **kwargs }
         self.params['annotation'] = annotation
         self.slices = slices
+        for slice in self.slices:
+            if 'X_spatial' in slice.obsm:
+                slice.obsm['spatial'] = slice.obsm['X_spatial'].copy()
+            elif 'spatial_stereoseq' in slice.obsm:
+                slice.obsm['spatial'] = np.array(slice.obsm['spatial_stereoseq'].copy())
+                
         self.file_names = [fname for fname in self.params['files'].split(',')] if 'files' in self.params else [f"Slice_{id}" for id in range(len(slices))]
         if self.params['win_sizes'] == 'NA' or self.params['sliding_steps'] == 'NA':
             logging.info("Window sizes and/or sliding steps not provided by user - proceeding to calculate optimal values")
@@ -51,10 +57,6 @@ class CommunityDetection():
 
         for slice_id, (slice, file) in enumerate(zip(self.slices, self.file_names)):
             slice.uns['slice_id'] = slice_id
-            if 'X_spatial' in slice.obsm:
-                slice.obsm['spatial'] = slice.obsm['X_spatial'].copy()
-            elif 'spatial_stereoseq' in slice.obsm:
-                slice.obsm['spatial'] = np.array(slice.obsm['spatial_stereoseq'].copy())
 
             algo = SlidingWindowMultipleSizes(slice, slice_id, file, **self.params)
             # plot original annotation
