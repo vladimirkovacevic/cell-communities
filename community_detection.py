@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 import scanpy as sc
 import random
+import logging
 
 from functools import reduce
 from itertools import cycle
@@ -160,11 +161,12 @@ class CommunityDetection():
         MAX_COVERED = 50
         AVG_COVERED_GOAL = (MAX_COVERED + MIN_COVERED) // 2
         
-        x_min, x_max = np.min(self.slices[0].obsm['spatial'][0]), np.max(self.slices[0].obsm['spatial'][0])
-        y_min, y_max = np.min(self.slices[0].obsm['spatial'][1]), np.max(self.slices[0].obsm['spatial'][1])
+        x_min, x_max = np.min(self.slices[0].obsm['spatial'][:, 0]), np.max(self.slices[0].obsm['spatial'][:, 0])
+        y_min, y_max = np.min(self.slices[0].obsm['spatial'][:, 1]), np.max(self.slices[0].obsm['spatial'][:, 1])
         x_range, y_range = abs(abs(x_max) - abs(x_min)), abs(abs(y_max) - abs(y_min))
 
         win_size = int(x_range // 50 if x_range < y_range else y_range // 50)
+        delta_multiplier = win_size * 0.15
 
         avg_covered = -1
         delta = -1
@@ -174,19 +176,22 @@ class CommunityDetection():
             for x, y in self.slices[0].obsm['spatial']:
                 cell_to_loc[(x // win_size, y // win_size)] += 1
             
-            num_selected = int(len(cell_to_loc.items()) * 0.1)
-            avg_covered = sum(random.choices(list(cell_to_loc.values()), k=num_selected)) // num_selected
+            num_selected = int(len(cell_to_loc) * 0.1)
+            avg_covered = np.median(random.choices(list(cell_to_loc.values()), k=num_selected))
             
             if MIN_COVERED < avg_covered < MAX_COVERED:
                 break
 
-            delta = AVG_COVERED_GOAL - avg_covered
+            delta = np.sign(AVG_COVERED_GOAL - avg_covered) * (
+                AVG_COVERED_GOAL / avg_covered if AVG_COVERED_GOAL > avg_covered else avg_covered / AVG_COVERED_GOAL
+                ) * delta_multiplier
             win_size += delta
             iters += 1
         
         #closest doubly even number so that sliding step is also even number
+        win_size = int(win_size)
         win_size = win_size + ((win_size & 0b11) ^ 0b11) + 1 if win_size & 0b11 else win_size
-
+        
         return (str(win_size), str(win_size // 2))
     
     def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
