@@ -131,8 +131,8 @@ class CommunityDetection():
                 if self.params['plotting'] > 2:
                     algo.plot_cluster_mixtures()
                     algo.boxplot_stats()
+                if self.params['plotting'] > 4:
                     algo.colorplot_stats(color_system=self.params['color_plot_system'])
-                if self.params['plotting'] > 3:
                     algo.colorplot_stats_per_cell_types()
                 # save final tissue with stats
                 algo.save_tissue(suffix='_stats')
@@ -146,7 +146,6 @@ class CommunityDetection():
         if self.params['plotting'] > 3:
             self.plot_cell_abundance_per_slice(algo_list, self.params['out_path'])
             self.plot_cluster_abundance_per_slice(algo_list, self.params['out_path'])
-        if self.params['plotting'] > 4:
             self.plot_cell_perc_in_community_per_slice(algo_list, self.params['out_path'])
 
         generate_report(self.params)
