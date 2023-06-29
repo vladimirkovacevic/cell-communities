@@ -481,6 +481,7 @@ class CommunityClusteringAlgo(ABC):
                         # plot windows, where empty areas will have alpha=0, making them transparent
                         plt.imshow(rgba_image, zorder=2)
                         plt.axis('off')
+                        plt.gca().invert_yaxis()
                         ax.grid(visible=False)
                         ax.set_title(f'{color_system.upper()} of community {cluster[0]} win size {window_size}, step {sliding_step} - top 3 cell types\n({self.adata.uns["sample_name"]})')
                         
@@ -532,6 +533,7 @@ class CommunityClusteringAlgo(ABC):
                         
                 plt.imshow(rgba_image, zorder=2)
                 plt.axis('off')
+                plt.gca().invert_yaxis()
                 ax.grid(visible=False)
                 ax.set_title(f'Percentage of {cell_type} (red channel of RGB) in:\n{self.adata.uns["sample_name"]}, win size {window_size}, step {sliding_step}')  
                 fig.savefig(os.path.join(self.dir_path, f'ct_colorplot_rgb_{cell_type}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=200)
