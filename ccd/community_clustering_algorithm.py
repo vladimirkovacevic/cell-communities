@@ -32,7 +32,7 @@ cluster_palette = ["#1f77b4", "#ff7f0e", "#279e68", "#d62728", "#aa40fc", "#8c56
                   '#FFFF9F', '#3C69E7', '#C3CDE6', '#F8D568', '#FCD667', '#29AB87', \
                   '#8359A3', '#5e503f', '#FBE7B2', '#FFB97B', '#33CC99', '#F2C649', \
                   '#B94E48', '#0095B7', '#E77200', '#FF681F', '#e0aaff', '#FED85D', \
-                  '#240046', '#0a0908', '#C32148', '#98f5e1']                  
+                  '#240046', '#0a0908', '#C32148', '#98f5e1']
                   
 class CommunityClusteringAlgo(ABC):
     """Abstract base class for community detection algorithms."""
@@ -367,7 +367,6 @@ class CommunityClusteringAlgo(ABC):
                 ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
                 ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
-
                 plt.close()
 
     @timeit
@@ -592,6 +591,7 @@ class CommunityClusteringAlgo(ABC):
                 g = sns.heatmap(np.array(range(stats.shape[1]+1))[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap, ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
+        plt.close()
 
     def save_metrics(self):
         """Save metrics results in CSV format."""
