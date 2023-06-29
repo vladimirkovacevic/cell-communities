@@ -62,6 +62,8 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 - `--min_perc_celltype`: Minimum percentage of cells of a cell type which at least min_num_celltype cell types need to have to show a cluster in plot_celltype_table(). Default is `10`.
 - `--color_plot_system`: Color system for display of cluster specific windows. Available: rgb, hsv. Default is `rgb`.
 - `--n_clusters`: Number of clusters for spectral and agglomerative clustering. Ignored for leiden. Default is `10`.
+- `--hide_plots`, Stop plots from displaying in notebooks or standard ouput. Used for batch processing. Default is `False`.
+
 ## Example
 
 #### Download data: 
