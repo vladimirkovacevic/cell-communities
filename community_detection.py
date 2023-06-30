@@ -376,7 +376,7 @@ class CommunityDetection():
         legend_ncols = 1 if len(handles) <= 12 else 2
         figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
         figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
-        if ~self.params['hide_plots']:
+        if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
@@ -437,7 +437,7 @@ class CommunityDetection():
         
         plt.tight_layout()
         plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'), bbox_inches='tight')
-        if ~self.params['hide_plots']:
+        if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
@@ -463,7 +463,7 @@ class CommunityDetection():
         ax.xaxis.set_label_position('top')
         plt.tight_layout()
         plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'), bbox_inches='tight')
-        if ~self.params['hide_plots']:
+        if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
@@ -498,7 +498,7 @@ class CommunityDetection():
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
         plt.savefig(os.path.join(path, f'cell_abundance_all_slices.png'))
-        if ~self.params['hide_plots']:
+        if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
@@ -543,7 +543,7 @@ class CommunityDetection():
             ax.grid(False)
         plt.tight_layout()
         plt.savefig(os.path.join(path, f'cell_abundance_per_slice.png'))
-        if ~self.params['hide_plots']:
+        if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
@@ -579,7 +579,7 @@ class CommunityDetection():
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
         plt.savefig(os.path.join(path, f'cluster_abundance_all_slices.png'))
-        if ~self.params['hide_plots']:
+        if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
@@ -625,7 +625,7 @@ class CommunityDetection():
             ax.grid(False)
         plt.tight_layout()
         plt.savefig(os.path.join(path, f'cluster_abundance_per_slice.png'))
-        if ~self.params['hide_plots']:
+        if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
