@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_adata', help='Save adata file with resulting .obs column of cell community labels', type=bool, required=False, default=False)
     parser.add_argument('--min_count_per_type', help='Minimum number of cells per cell type needed to use the cell type for cell communities extraction (in percentages)', type=float, required=False, default=0.1)
     parser.add_argument('--n_clusters', help='Number of clusters for spectral and agglomerative clustering. Ignored for leiden', type=int, required=False, default=10)
-    parser.add_argument('--hide_plots', help='Stop plots from displaying in notebooks or standard ouput. Used for batch processing', type=bool, required=False, default=False)
+    parser.add_argument('--hide_plots', help='Stop plots from displaying in notebooks or standard ouput. Used for batch processing', required=False, default=False, action='store_true')
 
     args = parser.parse_args()
 
