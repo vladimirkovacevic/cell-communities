@@ -2,9 +2,9 @@ import logging
 import time
 
 import argparse as ap
-import scanpy as sc
 
 from community_detection import CommunityDetection
+from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 
 if __name__ == '__main__':
     start_time = time.perf_counter()
@@ -51,10 +51,8 @@ if __name__ == '__main__':
     
     slices = []
     for file in args.files.split(','):
-        # READ CELL TYPE ADATA
         if file.endswith('.h5ad'):
-            adata = sc.read(file)
-            slices.append(adata)
+            slices.append(AnnBasedStereoExpData(file))
         else:
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef

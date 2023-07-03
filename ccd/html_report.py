@@ -251,7 +251,8 @@ def per_community_content(path, plotting_level):
     
     content += make_table(cmixtures_dict, columns=2, comment="Cell types that are present in each community")
     content += make_table(boxplots_dict, columns=2, comment="Boxplots of cell types that are present in each community")
-    content += make_table(colorplot_dict, columns=2, comment="RGB Colorplots")
+    if plotting_level == 5:
+        content += make_table(colorplot_dict, columns=2, comment="RGB Colorplots")
     return content
 
 

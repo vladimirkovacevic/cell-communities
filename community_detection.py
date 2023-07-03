@@ -4,13 +4,13 @@ import matplotlib.ticker as mtick
 import os
 import pandas as pd
 import seaborn as sns
-import scanpy as sc
 
 from functools import reduce
 from itertools import cycle
 from matplotlib import pyplot as plt
 from collections import defaultdict
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering
+from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 
 from anndata import AnnData
 from typing import List
@@ -47,12 +47,13 @@ class CommunityDetection():
         """
         self.params = { **COMMUNITY_DETECTION_DEFAULTS, **kwargs }
         self.params['annotation'] = annotation
+        # self.stereo_data_slices = slices
         self.slices = slices
         for slice in self.slices:
-            if 'X_spatial' in slice.obsm:
-                slice.obsm['spatial'] = slice.obsm['X_spatial'].copy()
-            elif 'spatial_stereoseq' in slice.obsm:
-                slice.obsm['spatial'] = np.array(slice.obsm['spatial_stereoseq'].copy())
+            if 'X_spatial' in slice._ann_data.obsm:
+                slice._ann_data.obsm['spatial'] = slice._ann_data.obsm['X_spatial'].copy()
+            elif 'spatial_stereoseq' in slice._ann_data.obsm:
+                slice._ann_data.obsm['spatial'] = np.array(slice._ann_data.obsm['spatial_stereoseq'].copy())
                 
         self.file_names = [fname for fname in self.params['files'].split(',')] if 'files' in self.params else [f"Slice_{id}" for id in range(len(slices))]
         if self.params['win_sizes'] == 'NA' or self.params['sliding_steps'] == 'NA':
@@ -120,7 +121,7 @@ class CommunityDetection():
         if not os.path.exists(self.params['out_path']):
             os.makedirs(self.params['out_path'])
 
-        for slice_id, (slice, file) in enumerate(zip(self.slices, self.file_names)):
+        for slice_id, (slice, file) in enumerate(zip([slice._ann_data for slice in self.slices], self.file_names)):
             slice.uns['slice_id'] = slice_id
 
             algo = SlidingWindowMultipleSizes(slice, slice_id, file, **self.params)
@@ -216,7 +217,7 @@ class CommunityDetection():
         generate_report(self.params)
    
     @timeit
-    def cluster(self, merged_tissue):
+    def cluster(self, merged_tissue): # TODO, merged_tissue da bude AnnBasedStereoExpData
         """
         Perform clustering on merged tissue data from all slices.
         Supported clustering algorithms are:
@@ -231,22 +232,28 @@ class CommunityDetection():
         - merged_tissue (AnnData): AnnData object containin features of all slices
 
         """
+        merged_tissue = AnnBasedStereoExpData(h5ad_file_path="", based_ann_data=merged_tissue)
         if self.params['cluster_algo'] == 'leiden':
-            sc.pp.neighbors(merged_tissue, use_rep='X')
-            sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
+            merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
+            merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
+            # sc.pp.neighbors(merged_tissue, use_rep='X')
+            merged_tissue.tl.leiden(neighbors_res_key='neighbors', res_key='leiden', resolution=self.params['resolution'])
+            # sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
         elif self.params['cluster_algo'] == 'spectral':
-            sc.pp.neighbors(merged_tissue, use_rep='X')
+            merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
+            merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
+            # sc.pp.neighbors(merged_tissue, use_rep='X')
             spcl = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
-            merged_tissue.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue.obsp['connectivities'])).astype('str')
+            merged_tissue._ann_data.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue._ann_data.obsp['connectivities'])).astype('str')
         elif self.params['cluster_algo'] == 'agglomerative':
             ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='ward', distance_threshold=None)
-            merged_tissue.obs[self.params['cluster_algo']] = (ac.fit_predict(merged_tissue.X)).astype('str')
+            merged_tissue._ann_data.obs[self.params['cluster_algo']] = (ac.fit_predict(merged_tissue._ann_data.X)).astype('str')
         else:
             logging.error('Unsupported clustering algorithm')
-            sys.exit(1)
+            raise ValueError("Unsupported clustering algorithm")
     
     def log_win_size_full_info(self):
-        for slice, fname in zip(self.slices, self.file_names):
+        for slice, fname in zip([slice._ann_data for slice in self.slices], self.file_names):
             x_min, x_max = np.min(slice.obsm['spatial'][:, 0]), np.max(slice.obsm['spatial'][:, 0])
             y_min, y_max = np.min(slice.obsm['spatial'][:, 1]), np.max(slice.obsm['spatial'][:, 1])
             x_range, y_range = abs(abs(x_max) - abs(x_min)), abs(abs(y_max) - abs(y_min))
@@ -351,13 +358,13 @@ class CommunityDetection():
         unknown_label = []
         for (algo, ax) in zip(algo_list, axes.flatten()):
             palette = algo.cluster_palette if clustering else algo.annotation_palette
-            plot_spatial(algo.adata, color=[annotation], palette=palette, spot_size=algo.spot_size, ax=ax, show=False, frameon=False)
+            plot_spatial(algo.adata, annotation=annotation, palette=palette, spot_size=algo.spot_size, ax=ax)
             ax.get_legend().remove()
             ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
             hands, labs = ax.get_legend_handles_labels()
             for h, l in zip(hands, labs):
                 h._sizes = [11]
-                if l=='unknown':
+                if l == 'unknown':
                     unknown_label = np.array([[h, l]])
                     continue
                 if l not in h_d.values():
@@ -415,7 +422,7 @@ class CommunityDetection():
         total['perc_of_all_cells'] = np.around(total['total_counts'] / total['total_counts'][-1] * 100, decimals=1)
         total = total.loc[sorted(total.index.values, key=lambda x: float(x) if x != "total_cells" else float('inf'))]
 
-        sc.settings.set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=300, facecolor='white')
         sns.set(font_scale=1.5)
 
         ncols = len(total.columns)
@@ -454,7 +461,7 @@ class CommunityDetection():
         cells_in_comm_per_slice = {algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in algos}
         df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
         df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
-        sc.settings.set_figure_params(dpi=200, facecolor='white')
+        set_figure_params(dpi=200, facecolor='white')
         sns.set(font_scale=1.5)
         plt.figure(figsize=(15, 15))
 
@@ -479,7 +486,7 @@ class CommunityDetection():
         """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
-        sc.settings.set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=300, facecolor='white')
 
         greys=cycle(['darkgray','gray','dimgray','lightgray'])
         colors = [next(greys) for _ in range(len(algos))]
@@ -522,7 +529,7 @@ class CommunityDetection():
         fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
-        sc.settings.set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=300, facecolor='white')
 
         cell_percentage_dfs = []
         plot_columns = []
@@ -559,7 +566,7 @@ class CommunityDetection():
         """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
-        sc.settings.set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=300, facecolor='white')
 
         greys=cycle(['darkgray','gray','dimgray','lightgray'])
         colors = [next(greys) for _ in range(len(algos))]
@@ -603,7 +610,7 @@ class CommunityDetection():
         fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20, 10), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
-        sc.settings.set_figure_params(dpi=100, facecolor='white')
+        set_figure_params(dpi=100, facecolor='white')
 
         cell_percentage_dfs = []
         plot_columns = []

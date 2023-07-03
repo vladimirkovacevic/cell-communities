@@ -3,7 +3,7 @@ import logging
 from .community_clustering_algorithm import CommunityClusteringAlgo
 from .html_report import generate_report
 from .metrics import calculate_spatial_metrics
-from .utils import timeit, plot_spatial
+from .utils import timeit, plot_spatial, set_figure_params
 from .constants import *
 from .metrics import *
 
