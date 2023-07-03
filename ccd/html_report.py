@@ -507,7 +507,7 @@ def generate_report(params, execution_time):
                 {per_community_content(params['out_path'], params['plotting'])}
             </div>
             <div style="background-color:#faf0de; width:100%" class="centered testRemove">
-                <h4> Execution time of CCD functions: {execution_time}s</h4>
+                <h4> Execution time of CCD functions: {execution_time:.2f}s (not included input data reading time)</h4>
             </div>
         </div>
         <footer><h4>Report created from commit: {commit_date}</h4></footer>
