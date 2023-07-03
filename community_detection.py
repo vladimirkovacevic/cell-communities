@@ -300,8 +300,8 @@ class CommunityDetection():
         MAX_COVERED = 60
         AVG_COVERED_GOAL = (MAX_COVERED + MIN_COVERED) // 2
         
-        x_min, x_max = np.min(self.slices[0].obsm['spatial'][:, 0]), np.max(self.slices[0].obsm['spatial'][:, 0])
-        y_min, y_max = np.min(self.slices[0].obsm['spatial'][:, 1]), np.max(self.slices[0].obsm['spatial'][:, 1])
+        x_min, x_max = np.min(self.slices[0]._ann_data.obsm['spatial'][:, 0]), np.max(self.slices[0]._ann_data.obsm['spatial'][:, 0])
+        y_min, y_max = np.min(self.slices[0]._ann_data.obsm['spatial'][:, 1]), np.max(self.slices[0]._ann_data.obsm['spatial'][:, 1])
         x_range, y_range = abs(abs(x_max) - abs(x_min)), abs(abs(y_max) - abs(y_min))
 
         win_size = int(x_range // 50 if x_range < y_range else y_range // 50)
@@ -312,7 +312,7 @@ class CommunityDetection():
         iters = 0
         while iters < MAX_ITERS:
             cell_to_loc = defaultdict(int)
-            for x, y in self.slices[0].obsm['spatial']:
+            for x, y in self.slices[0]._ann_data.obsm['spatial']:
                 cell_to_loc[(x // win_size, y // win_size)] += 1
             
             # using median instead of mean because many windows can be empty (space is not fully occupied by tissue)
@@ -333,7 +333,7 @@ class CommunityDetection():
         
         if iters == MAX_ITERS:
             logging.warn(f"Optimal window size not obtained in {MAX_ITERS} iterations.")
-        self.log_win_size_info_per_slice(self.slices[0], self.file_names[0], win_size, win_size // 2, x_range, y_range)
+        self.log_win_size_info_per_slice(self.slices[0]._ann_data, self.file_names[0], win_size, win_size // 2, x_range, y_range)
         
         return (str(win_size), str(win_size // 2))
      
