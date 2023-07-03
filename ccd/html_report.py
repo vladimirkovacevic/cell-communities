@@ -332,7 +332,7 @@ def annotation_and_communities_figures(path):
         return (annotations[0], communities[0])
 
 @timeit
-def generate_report(params):
+def generate_report(params, execution_time):
     """
     Generate a cell communities clustering report.
 
@@ -505,6 +505,9 @@ def generate_report(params):
             </div>
             <div class="centeredSmall" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 {per_community_content(params['out_path'], params['plotting'])}
+            </div>
+            <div style="background-color:#faf0de; width:100%" class="centered testRemove">
+                <h4> Execution time of CCD functions: {execution_time}</h4>
             </div>
         </div>
         <footer><h4>Report created from commit: {commit_date}</h4></footer>

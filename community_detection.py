@@ -1,3 +1,4 @@
+import time
 import anndata as ad
 import numpy as np
 import matplotlib.ticker as mtick
@@ -60,8 +61,8 @@ class CommunityDetection():
             self.params['win_sizes'], self.params['sliding_steps'] = self.calc_optimal_win_size_and_slide_step()
         else:
             self.log_win_size_full_info()
-        
-    @timeit
+    
+
     def run(self):
         """
         Executes the community detection algorithm.
@@ -104,6 +105,8 @@ class CommunityDetection():
         8. Report Generation:
         - Generates a HTML report o the results.
         """
+
+        start_time = time.perf_counter()
 
         if not os.path.exists(self.params['out_path']):
             os.makedirs(self.params['out_path'])
@@ -213,7 +216,9 @@ class CommunityDetection():
             self.plot_cluster_abundance_per_slice(algo_list, self.params['out_path'])
             self.plot_cell_perc_in_community_per_slice(algo_list, self.params['out_path'])
 
-        generate_report(self.params)
+        end_time = time.perf_counter()
+
+        generate_report(self.params, end_time - start_time)
    
     @timeit
     def cluster(self, merged_tissue):
