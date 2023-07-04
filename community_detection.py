@@ -221,7 +221,7 @@ class CommunityDetection():
         """
         Perform clustering on merged tissue data from all slices.
         Supported clustering algorithms are:
-        'leiden' - Leiden (scanpy) with neighbors similarity metric,
+        'leiden' - Leiden (stereopy) with neighbors similarity metric,
         'spectral' - Spectral (skimage) with neighbors similarity metric, and
         'agglomerative' - Agglomerative (skimage) with 'ward' linkage type
         and 'euclidian' distance metric.
@@ -229,20 +229,21 @@ class CommunityDetection():
         and updated inplace.
 
         Parameters:
-        - merged_tissue (AnnData): AnnData object containin features of all slices
+        - merged_tissue (AnnBasedStereoExpData): AnnBasedStereoExpData object containin features of all slices
 
         """
         merged_tissue = AnnBasedStereoExpData(h5ad_file_path="", based_ann_data=merged_tissue)
         if self.params['cluster_algo'] == 'leiden':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
             merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
-            # sc.pp.neighbors(merged_tissue, use_rep='X')
             merged_tissue.tl.leiden(neighbors_res_key='neighbors', res_key='leiden', resolution=self.params['resolution'])
-            # sc.tl.leiden(merged_tissue, resolution=self.params['resolution'])
+            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('int')
+            merged_tissue._ann_data.obs['leiden'] -= 1
+            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('str')
+            merged_tissue._ann_data.obs['leiden'] = merged_tissue._ann_data.obs['leiden'].astype('category')
         elif self.params['cluster_algo'] == 'spectral':
             merged_tissue._ann_data.obsm['X_pca_dummy'] = merged_tissue._ann_data.X
             merged_tissue.tl.neighbors(pca_res_key='X_pca_dummy', n_neighbors=15)
-            # sc.pp.neighbors(merged_tissue, use_rep='X')
             spcl = SpectralClustering(n_clusters=self.params['n_clusters'], eigen_solver='arpack', random_state=0, affinity='precomputed', n_jobs=5)
             merged_tissue._ann_data.obs[self.params['cluster_algo']] = (spcl.fit_predict(merged_tissue._ann_data.obsp['connectivities'])).astype('str')
         elif self.params['cluster_algo'] == 'agglomerative':

@@ -48,7 +48,7 @@ def plot_spatial(
         - groups (list): If we want to plot only specific groups from annotation categories we will include only the categories present in groups parameter
 
     """
-    spot_size = spot_size * 0.5
+    spot_size = spot_size * 0.25
     data = adata[adata.obs[annotation].isin(groups)] if groups else adata
     ax = sns.scatterplot(data=data.obs, hue=annotation, x=data.obsm['spatial'][:, 0], y=data.obsm['spatial'][:, 1], ax=ax, s=spot_size, linewidth=0, palette=palette, marker='.')
     ax.set(yticklabels=[], xticklabels=[], title=title)
