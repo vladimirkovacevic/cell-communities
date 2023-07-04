@@ -1,3 +1,9 @@
+'''
+utils.py is created for wrappers, timeit decorator and
+everything else that should be globally accessible and does not belong
+to any specific class.
+
+'''
 import time
 import seaborn as sns
 
@@ -30,15 +36,16 @@ def plot_spatial(
     groups=None
 ):
     """
-    Scatter plot in spatial coordinates. A wrapper around scanpy's pl.spatial to correct inversion of y-axis. 
-    Standard plots have coordinates in 'lower left' while images are considered
-    to start from 'upper left'. Scanpy assumes that we will always
-    plot some sort of staining image. If we do not provide image, scanpy
-    will flip yaxis for us to get back to the standard plot coordinates.
-    That causes inversion of our plotting figures so we wrapped scanpy's
-    pl.spatial. utils.py is created for such wrappers, timeit decorator and
-    everything else that should be globally accessible and does not belong
-    to any specific class.
+    Scatter plot in spatial coordinates.
+
+    Parameters:
+        - adata (AnnData): Annotated data object which represents the sample
+        - annotation (str): adata.obs column used for grouping
+        - ax (Axes): Axes object used for plotting
+        - spot_size (int): Size of the dot that represents a cell. We are passing it as a diameter of the spot, while the plotting library uses radius therefore it is multiplied by 0.5 
+        - palette (dict): Dictionary that represents a mapping between annotation categories and colors
+        - title (str): Title of the figure
+        - groups (list): If we want to plot only specific groups from annotation categories we will include only the categories present in groups parameter
 
     """
     spot_size = spot_size * 0.5

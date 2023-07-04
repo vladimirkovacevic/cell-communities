@@ -52,7 +52,7 @@ class CommunityClusteringAlgo(ABC):
         self.slice_id = slice_id
         for key, value in params.items():
             setattr(self, key, value)
-        set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=params['dpi'], facecolor='white')
         self.adata = adata
         self.adata.uns['algo_params'] = params
         self.adata.uns['sample_name'] = os.path.basename(input_file_path.rsplit(".", 1)[0])
@@ -349,7 +349,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
         # plot each cluster and its cells mixture
-        set_figure_params(dpi=200, facecolor='white')
+        set_figure_params(dpi=self.dpi, facecolor='white')
         stats = self.tissue.uns['cell mixtures stats']
 
         new_stats = stats.copy()
