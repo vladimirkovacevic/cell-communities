@@ -1,4 +1,3 @@
-import logging
 import os
 
 import numpy as np
@@ -9,6 +8,7 @@ from abc import ABC, abstractmethod
 from skimage import color
 from matplotlib import pyplot as plt
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+from stereo.log_manager import logger
 
 from .utils import timeit, plot_spatial, set_figure_params
 
@@ -66,7 +66,7 @@ class CommunityClusteringAlgo(ABC):
             if cell_num > cell_count_limit:
                 cell_over_limit.append(cell_tp)
             else:
-                logging.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type: {cell_num} cells < {int(cell_count_limit)} ({self.min_count_per_type} % of {len(self.adata)})')
+                logger.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type: {cell_num} cells < {int(cell_count_limit)} ({self.min_count_per_type} % of {len(self.adata)})')
         
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
         self.unique_cell_type = list(sorted(self.adata.obs[self.annotation].unique()))
@@ -507,7 +507,7 @@ class CommunityClusteringAlgo(ABC):
                             plt.show()
                         plt.close()
         else:
-            logging.warn(f'Unsupported color system: {color_system}.')
+            logger.warning(f'Unsupported color system: {color_system}.')
 
     @timeit
     def colorplot_stats_per_cell_types(self):
@@ -625,7 +625,7 @@ class CommunityClusteringAlgo(ABC):
         
         self.tissue.write_h5ad(os.path.join(self.dir_path, f'tissue_{self.filename}{suffix}.h5ad'), compression="gzip")
 
-        logging.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
+        logger.info(f'Saved clustering result tissue_{self.filename}{suffix}.h5ad.')
 
     def save_anndata(self, suffix=''):
         """
@@ -638,14 +638,14 @@ class CommunityClusteringAlgo(ABC):
         # save anndata file
         self.adata.write_h5ad(os.path.join(self.dir_path, f'{self.filename}{suffix}.h5ad'), compression="gzip")
 
-        logging.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
+        logger.info(f'Saved clustering result as a part of original anndata file {self.filename}{suffix}.h5ad.')
     
     def save_community_labels(self):
         """Save community labels from anndata file."""
 
         self.adata.obs[f'tissue_{self.method_key}'].to_csv(os.path.join(self.dir_path, f'{self.filename}.csv'))
 
-        logging.info(f'Saved community labels after clustering as a part of original anndata file to {self.filename}.csv')
+        logger.info(f'Saved community labels after clustering as a part of original anndata file to {self.filename}.csv')
 
     def save_mixture_stats(self):
         """Save cell mixture statistics, which contains number of cells of specific types per community."""

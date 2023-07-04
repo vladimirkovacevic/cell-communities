@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from collections import defaultdict
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
+from stereo.log_manager import logger
 
 from anndata import AnnData
 from typing import List
@@ -57,7 +58,7 @@ class CommunityDetection():
                 
         self.file_names = [fname for fname in self.params['files'].split(',')] if 'files' in self.params else [f"Slice_{id}" for id in range(len(slices))]
         if self.params['win_sizes'] == 'NA' or self.params['sliding_steps'] == 'NA':
-            logging.info("Window sizes and/or sliding steps not provided by user - proceeding to calculate optimal values")
+            logger.info("Window sizes and/or sliding steps not provided by user - proceeding to calculate optimal values")
             self.params['win_sizes'], self.params['sliding_steps'] = self.calc_optimal_win_size_and_slide_step()
         else:
             self.log_win_size_full_info()
@@ -250,7 +251,7 @@ class CommunityDetection():
             ac = AgglomerativeClustering(n_clusters=self.params['n_clusters'], affinity='euclidean', compute_full_tree=False, linkage='ward', distance_threshold=None)
             merged_tissue._ann_data.obs[self.params['cluster_algo']] = (ac.fit_predict(merged_tissue._ann_data.X)).astype('str')
         else:
-            logging.error('Unsupported clustering algorithm')
+            logger.error('Unsupported clustering algorithm')
             raise ValueError("Unsupported clustering algorithm")
     
     def log_win_size_full_info(self):
@@ -279,7 +280,7 @@ class CommunityDetection():
         for x, y in slice.obsm['spatial']:
             cell_to_loc[(x // win_size, y // win_size)] += 1
         
-        logging.info(f"""Window size info for slice: {fname}     
+        logger.info(f"""Window size info for slice: {fname}     
                      window size: {win_size}
                      sliding step: {slide_step}
                      cells mean: {np.mean(list(cell_to_loc.values())):.2f}
@@ -333,7 +334,7 @@ class CommunityDetection():
         win_size = win_size + ((win_size & 0b11) ^ 0b11) + 1 if win_size & 0b11 else win_size
         
         if iters == MAX_ITERS:
-            logging.warn(f"Optimal window size not obtained in {MAX_ITERS} iterations.")
+            logger.warning(f"Optimal window size not obtained in {MAX_ITERS} iterations.")
         self.log_win_size_info_per_slice(self.slices[0]._ann_data, self.file_names[0], win_size, win_size // 2, x_range, y_range)
         
         return (str(win_size), str(win_size // 2))

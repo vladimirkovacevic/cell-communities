@@ -1,4 +1,3 @@
-import logging
 import os
 import multiprocessing as mp
 from collections import defaultdict
@@ -12,6 +11,8 @@ from tqdm.auto import tqdm
 
 from .utils import timeit
 from ccd import CommunityClusteringAlgo
+
+from stereo.log_manager import logger
 
 
 class SlidingWindow(CommunityClusteringAlgo):
@@ -192,7 +193,7 @@ class SlidingWindow(CommunityClusteringAlgo):
         self.adata.obs.loc[:, f'tissue_{self.method_key}'] = list(cluster_max_vote.loc[self.adata.obs[f'window_spatial_{win_size}']])
         self.adata.obs[f'tissue_{self.method_key}'] = self.adata.obs[f'tissue_{self.method_key}'].astype('category')
 
-        logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
+        logger.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
     
 
 class SlidingWindowMultipleSizes(SlidingWindow):
@@ -243,7 +244,7 @@ class SlidingWindowMultipleSizes(SlidingWindow):
             super().community_calling(self.win_sizes_list[0], self.sliding_steps_list[0])
         else:
             self.community_calling_multiple_window_sizes_per_cell_multiprocessing()
-            logging.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
+            logger.info(f'Sliding window cell mixture calculation done. Added results to adata.obs["tissue_{self.method_key}"]')
 
     @timeit
     def community_calling_multiple_window_sizes_per_cell_multiprocessing(self):
