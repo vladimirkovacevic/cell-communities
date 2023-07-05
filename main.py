@@ -55,7 +55,7 @@ if __name__ == '__main__':
             # TODO: Consider adding GEF support
             raise AttributeError(f"File '{file}' extension is not .h5ad")  # or .gef
     cd = CommunityDetection(slices, **vars(args))
-    cd.run()
+    cd.main()
 
     end_time = time.perf_counter()
     total_time = end_time - start_time

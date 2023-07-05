@@ -10,14 +10,17 @@ from itertools import cycle
 from matplotlib import pyplot as plt
 from collections import defaultdict
 from sklearn.cluster import SpectralClustering, AgglomerativeClustering
+
 from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.log_manager import logger
+from stereo.algorithm.algorithm_base import AlgorithmBase
+
 
 from anndata import AnnData
 from typing import List
 from ccd import *
 
-class CommunityDetection():
+class CommunityDetection(AlgorithmBase):
     """
     Class for performing community detection on a set of slices.
     """
@@ -64,7 +67,7 @@ class CommunityDetection():
             self.log_win_size_full_info()
         
     @timeit
-    def run(self):
+    def main(self):
         """
         Executes the community detection algorithm.
 
