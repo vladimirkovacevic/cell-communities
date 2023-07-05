@@ -218,7 +218,8 @@ class CommunityDetection():
 
         end_time = time.perf_counter()
 
-        generate_report(self.params, end_time - start_time)
+        self.params['execution_time'] = end_time - start_time
+        generate_report(self.params)
    
     @timeit
     def cluster(self, merged_tissue):
