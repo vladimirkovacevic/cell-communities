@@ -148,7 +148,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
 
-        figure, ax = plt.subplots(figsize=(15,15))
+        figure, ax = plt.subplots()
         plot_spatial(self.adata, annotation=self.annotation, spot_size=self.spot_size, palette=self.annotation_palette, ax=ax, title=f'{self.adata.uns["sample_name"]}')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
@@ -216,7 +216,7 @@ class CommunityClusteringAlgo(ABC):
         # sc.pl.spatial(self.tissue, color=self.cluster_algo, spot_size=1)
         # # plot clustering after majority voting for each subwindow
         # sc.pl.spatial(self.tissue, color='f'{self.cluster_algo}_max_vote', spot_size=1)    
-        figure, ax = plt.subplots(figsize=(15, 15))
+        figure, ax = plt.subplots()
         labels = np.unique(self.adata.obs[f'tissue_{self.method_key}'].values)
         if 'unknown' in labels:
             labels = labels[labels!='unknown']
