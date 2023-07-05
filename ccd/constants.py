@@ -24,7 +24,8 @@ COMMUNITY_DETECTION_DEFAULTS = {
     'color_plot_system': 'rgb',
     'save_adata': False,
     'min_count_per_type': 0.1,
-    'hide_plots': False 
+    'hide_plots': False,
+    'dpi': 100
 }
 
 # index to find community id in figure names for html report
