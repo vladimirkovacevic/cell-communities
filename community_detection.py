@@ -34,15 +34,18 @@ class CommunityDetection(AlgorithmBase):
         Initialize the CommunityDetection object.
 
         Example:
-        import scanpy as sc
-        from community_detection import CommunityDetection
-        files = ... # List of input .h5ad file paths
-        slices = []
-        for file in files:
-            adata = sc.read(file)
-            slices.append(adata)
-        cd = CommunityDetection(slices, **vars(args))
-        cd.run()
+            Download data (~ 700MB) with command:
+                wget https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad
+
+            Execute:
+                import scanpy as sc
+                from community_detection import CommunityDetection
+                
+                adata = sc.read('E16.5_E1S3_cell_bin_whole_brain.h5ad')
+                slices = [adata]  # The algorithm works for multiple slices, too.
+
+                cd = CommunityDetection(slices, 'sim anno')
+                cd.main()
 
         Parameters:
         - slices (List[AnnData]): A list of AnnData objects representing the slices of a tissue.

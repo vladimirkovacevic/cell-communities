@@ -60,5 +60,4 @@ if __name__ == '__main__':
     end_time = time.perf_counter()
     total_time = end_time - start_time
 
-    logger.info(f'main.py took {total_time:.4f}s')
-    logger.warning('END')
+    logger.warning(f'Cell Community Detection took {total_time:.4f}s')
