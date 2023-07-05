@@ -506,6 +506,9 @@ def generate_report(params):
             <div class="centeredSmall" data-value={"remove" if params['plotting'] < 3 else "keep"}>
                 {per_community_content(params['out_path'], params['plotting'])}
             </div>
+            <div style="background-color:#faf0de; width:100%" class="centered testRemove">
+                <h4> Execution time of CCD functions: {params["execution_time"]:.2f}s (input data reading time is not included)</h4>
+            </div>
         </div>
         <footer><h4>Report created from commit: {commit_date}</h4></footer>
     </div>
