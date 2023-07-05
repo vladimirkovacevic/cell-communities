@@ -34,7 +34,7 @@ class CommunityDetection(AlgorithmBase):
         Initialize the CommunityDetection object.
 
         Example:
-            Download data (~ 700MB) with command:
+            Download data (~700MB) with command:
                 wget https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad
 
             Execute:
@@ -390,7 +390,7 @@ class CommunityDetection(AlgorithmBase):
         
         legend_ncols = 1 if len(handles) <= 12 else 2
         figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
-        figure.savefig(f'{out_path}/{img_name}', dpi=150, bbox_inches='tight')
+        figure.savefig(f'{out_path}/{img_name}', dpi=self.params['dpi'], bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
@@ -430,7 +430,7 @@ class CommunityDetection(AlgorithmBase):
         total['perc_of_all_cells'] = np.around(total['total_counts'] / total['total_counts'][-1] * 100, decimals=1)
         total = total.loc[sorted(total.index.values, key=lambda x: float(x) if x != "total_cells" else float('inf'))]
 
-        set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=self.params['dpi'], facecolor='white')
         sns.set(font_scale=1.5)
 
         ncols = len(total.columns)
@@ -469,7 +469,7 @@ class CommunityDetection(AlgorithmBase):
         cells_in_comm_per_slice = {algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in algos}
         df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
         df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
-        set_figure_params(dpi=200, facecolor='white')
+        set_figure_params(dpi=self.params['dpi'], facecolor='white')
         sns.set(font_scale=1.5)
         plt.figure(figsize=(15, 15))
 
@@ -494,7 +494,7 @@ class CommunityDetection(AlgorithmBase):
         """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
         greys=cycle(['darkgray','gray','dimgray','lightgray'])
         colors = [next(greys) for _ in range(len(algos))]
@@ -537,7 +537,7 @@ class CommunityDetection(AlgorithmBase):
         fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
         cell_percentage_dfs = []
         plot_columns = []
@@ -574,7 +574,7 @@ class CommunityDetection(AlgorithmBase):
         """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
         greys=cycle(['darkgray','gray','dimgray','lightgray'])
         colors = [next(greys) for _ in range(len(algos))]
@@ -618,7 +618,7 @@ class CommunityDetection(AlgorithmBase):
         fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20, 10), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
-        set_figure_params(dpi=100, facecolor='white')
+        set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
         cell_percentage_dfs = []
         plot_columns = []

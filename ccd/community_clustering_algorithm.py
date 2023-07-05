@@ -52,7 +52,9 @@ class CommunityClusteringAlgo(ABC):
         self.slice_id = slice_id
         for key, value in params.items():
             setattr(self, key, value)
-        set_figure_params(dpi=params['dpi'], facecolor='white')
+        
+        self.dpi = params['dpi']
+        set_figure_params(dpi=self.dpi, facecolor='white')
         self.adata = adata
         self.adata.uns['algo_params'] = params
         self.adata.uns['sample_name'] = os.path.basename(input_file_path.rsplit(".", 1)[0])
@@ -152,7 +154,7 @@ class CommunityClusteringAlgo(ABC):
         plot_spatial(self.adata, annotation=self.annotation, spot_size=self.spot_size, palette=self.annotation_palette, ax=ax, title=f'{self.adata.uns["sample_name"]}')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
-        figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=300, bbox_inches='tight')
+        figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=self.dpi, bbox_inches='tight')
         if not self.hide_plots:
             plt.show()
         plt.close()
@@ -169,7 +171,7 @@ class CommunityClusteringAlgo(ABC):
 
         figure, ax = plt.subplots(nrows=1, ncols=1)
         plt.hist(self.tissue.obs['window_cell_sum'].values)
-        figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws_{"_".join([str(i) for i in self.win_sizes_list])}.png'), dpi=300, bbox_inches='tight')
+        figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws_{"_".join([str(i) for i in self.win_sizes_list])}.png'), dpi=self.dpi, bbox_inches='tight')
         if not self.hide_plots:
             plt.show()
         plt.close()
@@ -199,7 +201,7 @@ class CommunityClusteringAlgo(ABC):
         """
         
         for cell_t in self.unique_cell_type:
-            plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=250)
+            plt.imsave(fname=os.path.join(self.dir_path, f'tissue_window_{cell_t}_{self.params_suffix}.png'), arr=self.tissue.uns['cell_t_images'][cell_t], vmin=0, vmax=1, cmap='gray', dpi=self.dpi)
     
     @timeit
     def plot_clustering(self):
@@ -227,7 +229,7 @@ class CommunityClusteringAlgo(ABC):
         order = [el[0] for el in sorted(enumerate(labels), key=lambda x: float(x[1]) if x[1] != "unknown" else float('inf'))]
         plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
-        figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=300, bbox_inches='tight')
+        figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=self.dpi, bbox_inches='tight')
         if not self.hide_plots:
             plt.show()
         plt.close()
@@ -309,7 +311,7 @@ class CommunityClusteringAlgo(ABC):
 
         """
         stats = self.tissue.uns['cell mixtures stats']
-        set_figure_params(dpi=300, facecolor='white')
+        set_figure_params(dpi=self.dpi, facecolor='white')
         sns.set(font_scale=1.5)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
@@ -334,7 +336,7 @@ class CommunityClusteringAlgo(ABC):
         for ax in axes:
             ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
             ax.xaxis.tick_top() 
-        plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), bbox_inches='tight', dpi=100)
+        plt.savefig(os.path.join(self.dir_path, f'cell_mixture_table_{self.params_suffix}.png'), bbox_inches='tight', dpi=self.dpi)
         if not self.hide_plots:
             plt.show()
         plt.close()
@@ -389,7 +391,7 @@ class CommunityClusteringAlgo(ABC):
         """
 
         # box plot per cluster of cell type percentages distribution
-        set_figure_params(dpi=100, facecolor='white')
+        set_figure_params(dpi=self.dpi, facecolor='white')
 
         cluster_list = np.unique(self.tissue.obs[self.cluster_algo])
         
@@ -502,7 +504,7 @@ class CommunityClusteringAlgo(ABC):
                         
                         ax.text(1.05, 0.5, f'{plane_names[0]} - {top_three_ct[0]} ({ct_perc[top_three_ct[0]]}%)\n{plane_names[1]} - {top_three_ct[1]} ({ct_perc[top_three_ct[1]]}%)\n{plane_names[2]} - {top_three_ct[2]} ({ct_perc[top_three_ct[2]]}%)', \
                                     transform=ax.transAxes, fontsize=12, va='center', ha='left')
-                        fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=200)
+                        fig.savefig(os.path.join(self.dir_path, f'colorplot_{color_system}_c{cluster[0]}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=self.dpi)
                         if not self.hide_plots:
                             plt.show()
                         plt.close()
@@ -546,7 +548,7 @@ class CommunityClusteringAlgo(ABC):
                 plt.gca().invert_yaxis()
                 ax.grid(visible=False)
                 ax.set_title(f'Percentage of {cell_type} (red channel of RGB) in:\n{self.adata.uns["sample_name"]}, win size {window_size}, step {sliding_step}')
-                fig.savefig(os.path.join(self.dir_path, f'ct_colorplot_rgb_{cell_type}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=200)
+                fig.savefig(os.path.join(self.dir_path, f'ct_colorplot_rgb_{cell_type}_ws{window_size}_ss{sliding_step}.png'), bbox_inches='tight', dpi=self.dpi)
                 if not self.hide_plots:
                     plt.show()
                 plt.close()
@@ -554,8 +556,8 @@ class CommunityClusteringAlgo(ABC):
     @timeit
     def plot_celltype_table(self):
         """Plot a table showing cell type abundance per cluster."""
-        
-        set_figure_params(dpi=300, facecolor='white')
+
+        set_figure_params(dpi=self.dpi, facecolor='white')
         sns.set(font_scale=1.5)
 
         stats = self.tissue.uns['cell mixtures'].copy()
