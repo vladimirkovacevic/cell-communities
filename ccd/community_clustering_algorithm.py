@@ -344,7 +344,7 @@ class CommunityClusteringAlgo(ABC):
         plt.close()
 
     @timeit
-    def plot_cluster_mixtures(self):
+    def plot_cluster_mixtures(self, cluster_index=None):
         """
         Plot cell mixtures for each cluster (community). Only cell types which have more than min_perc_to_show abundance will be shown.
 
@@ -359,7 +359,14 @@ class CommunityClusteringAlgo(ABC):
         new_stats = stats.copy()
         new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
         new_stats = new_stats.drop(labels='total_cells', axis=0)
+
+        ind=0
         for cluster in new_stats.iterrows():
+            if cluster_index != None and cluster_index != ind:
+                ind += 1
+                continue
+            elif cluster_index != None and cluster_index == ind:
+                ind += 1
             # only display clusters with more than min_cells_in_cluster cells
             if stats.loc[cluster[0]]['total_counts'] > self.min_cluster_size:
                 # sort cell types by their abundnce in the cluster
@@ -383,7 +390,7 @@ class CommunityClusteringAlgo(ABC):
                 plt.close()
 
     @timeit
-    def boxplot_stats(self, stripplot=False):
+    def boxplot_stats(self, cluster_index = None, stripplot=False):
         """
         Generate a box plot of cell type percentages distribution per cluster.
 
@@ -397,7 +404,13 @@ class CommunityClusteringAlgo(ABC):
 
         cluster_list = np.unique(self.tissue.obs[self.cluster_algo])
         
+        ind=0
         for cluster in cluster_list:
+            if cluster_index != None and cluster_index != ind:
+                ind += 1
+                continue
+            elif cluster_index != None and cluster_index == ind:
+                ind += 1
             # for each window size a box plot is provided per cluster
             cl_win_cell_distrib = self.tissue[self.tissue.obs[self.cluster_algo] == cluster]
             for window_size, sliding_step in zip(self.win_sizes_list, self.sliding_steps_list):
@@ -430,7 +443,7 @@ class CommunityClusteringAlgo(ABC):
                     plt.close()
 
     @timeit
-    def colorplot_stats(self, color_system='rgb'):
+    def colorplot_stats(self, color_system='rgb', cluster_index=None):
         """
         For each cluster (community) plot percentage of cell types. Plotting is done on windows level. 
 
@@ -452,7 +465,13 @@ class CommunityClusteringAlgo(ABC):
             cx_max = int(np.max(self.adata.obsm['spatial'][:,0]))
             cy_max = int(np.max(self.adata.obsm['spatial'][:,1]))
 
+            ind=0
             for cluster in stats.iterrows():
+                if cluster_index != None and cluster_index != ind:
+                    ind += 1
+                    continue
+                elif cluster_index != None and cluster_index == ind:
+                    ind += 1
                 # only display clusters with more than min_cells_in_cluster cells
                 if total_counts[cluster[0]] > self.min_cluster_size:
                     ct_perc = cluster[1].sort_values(ascending=False)
