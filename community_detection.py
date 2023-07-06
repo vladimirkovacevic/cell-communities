@@ -15,8 +15,6 @@ from stereo.core.stereo_exp_data import AnnBasedStereoExpData
 from stereo.log_manager import logger
 from stereo.algorithm.algorithm_base import AlgorithmBase
 
-
-from anndata import AnnData
 from typing import List
 from ccd import *
 
@@ -27,7 +25,7 @@ class CommunityDetection(AlgorithmBase):
 
     def __init__(
             self,
-            slices: List[AnnData],
+            slices: List[AnnBasedStereoExpData],
             annotation: str,
             **kwargs) -> None:
         """
@@ -38,19 +36,16 @@ class CommunityDetection(AlgorithmBase):
                 wget https://ftp.cngb.org/pub/SciRAID/stomics/STDS0000058/stomics/E16.5_E1S3_cell_bin_whole_brain.h5ad
 
             Execute:
-                import scanpy as sc
+                from stereo.core.stereo_exp_data import AnnBasedStereoExpData
                 from community_detection import CommunityDetection
-                
-                adata = sc.read('E16.5_E1S3_cell_bin_whole_brain.h5ad')
-                slices = [adata]  # The algorithm works for multiple slices, too.
-
-                cd = CommunityDetection(slices, 'sim anno')
+                adata = AnnBasedStereoExpData('data.h5ad')
+                cd = CommunityDetection([adata], 'sim anno') # The algorithm can also be run for multiple slices.
                 cd.main()
 
         Parameters:
-        - slices (List[AnnData]): A list of AnnData objects representing the slices of a tissue.
+        - slices (List[AnnBasedStereoExpData]): A list of AnnBasedStereoExpData objects representing the slices of a tissue.
         - annotation (str): The annotation string.
-        - **kwargs: Additional keyword arguments.
+        - **kwargs: Additional keyword arguments (Check constants.py for the description of additional arguments)
         """
         self.params = { **COMMUNITY_DETECTION_DEFAULTS, **kwargs }
         self.params['annotation'] = annotation
