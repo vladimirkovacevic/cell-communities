@@ -38,15 +38,16 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION -m METHODS [-o OUT_PATH] [-
 - `-a, --annotation`: Annotation label for cell types. 
 ### Optional arguments: 
 - `-t, --tfile`: File path to Anndata object with calculated cell mixtures for data windows, output of `calc_feature_matrix`. 
-- `-o, --out_path`: Absolute path to store outputs.
+- `-o, --out_path`: Absolute path to store outputs. Default is `results`.
 - `-c, --cluster_algo`: Clustering algorithm for cell communities. Available: leiden, spectral, agglomerative. Default is `leiden`.
 - `-r, --resolution`: Resolution of leiden clustering algorithm. Ignored for spectral and agglomerative. Default is `0.2`. 
 - `-s, --spot_size`: Size of the spot on plot. Default is `30`. 
-- `-v, --verbose`: Show logging messages. `0` shows warnings, `>0` shows info, `<0` shows no output generated. Default is `0`. 
-- `p, --plotting`: Save plots flag.`0`- No plotting/saving, `1` - save clustering plot, `2` - save all plots (cell type images statistics, and cell mixture plots). Default is `2`.
+- `-v, --verbose`: Show logging messages. `0` shows warnings, `>0` shows info. 
+- `p, --plotting`: Save plots flag.`0`- No plotting/saving, `1` - save clustering plot, `2` - additionally save plots of cell type images statistics and cell mixture plots, `3` - additionally save cell and cluster abundance plots and cell mixture plots for all slices and cluster mixture plots and boxplots for each slice,  `4` - additionally save cell type images, abundance plots and cell percentage table for each slice, `5` - additionally save color plots. Default is `2`.
 - `--skip_stats`: Skip statistics calculation on cell community clustering result. A table of cell mixtures and comparative spatial plots of cell types and mixtures will not be created. Default is False.
 - `--total_cell_norm`: Total number of cells per window mixture after normalization. Default is `10000`.
 - `--downsample_rate`: Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics. Default is `50`.
+- `--dpi`: DPI (dots per inch) used for plotting figures. Default is `100`.
 - `--num_threads`: Number of threads that will be used to speed up community calling. Default is `5`.
 - `--entropy_thres`: Threshold value for spatial cell type entropy for filtering out overdispersed cell types. Default is `1.0`.
 - `--scatter_thres`: Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types. Default is `1.0`.
