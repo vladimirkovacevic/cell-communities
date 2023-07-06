@@ -152,7 +152,8 @@ class CommunityClusteringAlgo(ABC):
 
         figure, ax = plt.subplots()
         plot_spatial(self.adata, annotation=self.annotation, spot_size=self.spot_size, palette=self.annotation_palette, ax=ax, title=f'{self.adata.uns["sample_name"]}')
-        plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
+        legend_ncols = 1 if len(self.unique_cell_type) <= 12 else 2
+        plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1), ncol=legend_ncols, prop = { "size": 6}, frameon=False)
         plt.tight_layout()
         figure.savefig(os.path.join(self.dir_path, f'cell_type_annotation.png'), dpi=self.dpi, bbox_inches='tight')
         if not self.hide_plots:
@@ -227,7 +228,8 @@ class CommunityClusteringAlgo(ABC):
         plot_spatial(self.adata, annotation=f'tissue_{self.method_key}', palette=self.cluster_palette, spot_size=self.spot_size, ax=ax, title=f'{self.adata.uns["sample_name"]}')
         handles, labels = ax.get_legend_handles_labels()
         order = [el[0] for el in sorted(enumerate(labels), key=lambda x: float(x[1]) if x[1] != "unknown" else float('inf'))]
-        plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc='upper left', bbox_to_anchor=(1.04, 1))
+        legend_ncols = 1 if len(labels) <= 12 else 2
+        plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc='upper left', bbox_to_anchor=(1.04, 1), ncol=legend_ncols, prop={"size" : 6}, frameon=False)
         plt.tight_layout()
         figure.savefig(os.path.join(self.dir_path, f'clusters_cellspots_{self.params_suffix}.png'), dpi=self.dpi, bbox_inches='tight')
         if not self.hide_plots:

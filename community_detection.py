@@ -156,9 +156,9 @@ class CommunityDetection(AlgorithmBase):
 
             # add algo object for each slice to a list
             algo_list.append(algo)
-        
+        self.algo_list = algo_list
         if self.params['plotting'] > 0 and len(algo_list) > 1:
-            self.plot_all_annotation(self.params['out_path'], algo_list)
+            self.plot_all_annotation()
 
         # MERGE TISSUE ANNDATA
         # each tissue has slice_id as 3rd coordinate in tissue.obsm['spatial']
@@ -206,15 +206,15 @@ class CommunityDetection(AlgorithmBase):
                 algo.save_tissue(suffix='_stats')
         
         if self.params['plotting'] > 0 and len(algo_list) > 1:
-            self.plot_all_clustering(self.params['out_path'], algo_list)
+            self.plot_all_clustering()
         if self.params['plotting'] > 2:
-            self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list], self.params['out_path'])
-            self.plot_cell_abundance_total(algo_list, self.params['out_path'])
-            self.plot_cluster_abundance_total(algo_list, self.params['out_path'])
+            self.plot_celltype_mixtures_total([algo.get_cell_mixtures().to_dict() for algo in algo_list])
+            self.plot_cell_abundance_total()
+            self.plot_cluster_abundance_total()
         if self.params['plotting'] > 3:
-            self.plot_cell_abundance_per_slice(algo_list, self.params['out_path'])
-            self.plot_cluster_abundance_per_slice(algo_list, self.params['out_path'])
-            self.plot_cell_perc_in_community_per_slice(algo_list, self.params['out_path'])
+            self.plot_cell_abundance_per_slice()
+            self.plot_cluster_abundance_per_slice()
+            self.plot_cell_perc_in_community_per_slice()
 
         generate_report(self.params)
    
@@ -340,27 +340,25 @@ class CommunityDetection(AlgorithmBase):
         
         return (str(win_size), str(win_size // 2))
      
-    def plot_all_slices(self, out_path, algo_list, annotation, img_name, clustering=False):
+    def plot_all_slices(self, img_name, clustering=False):
         """
         Plot all slices using the specified algorithms and annotations.
 
         Parameters:
-        - out_path (str): The output path where the image will be saved.
-        - algo_list (list): A list of algorithm objects to plot.
-        - annotation (str): The annotation to use for coloring.
         - img_name (str): The name of the output image file.
-        - clustering (bool, optional): Whether clustering is enabled. Defaults to False.
+        - clustering (bool, optional): Whether to plot clustering or cell type annotation. Defaults to False.
 
         """
-        number_of_samples = len(algo_list)
+        number_of_samples = len(self.algo_list)
         number_of_rows = 2 if number_of_samples % 2 == 0 and number_of_samples > 2 else 1
         number_of_columns = (number_of_samples // 2) if number_of_samples % 2 == 0 and number_of_samples > 2 else number_of_samples
 
         figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
         h_d = {}
         unknown_label = []
-        for (algo, ax) in zip(algo_list, axes.flatten()):
+        for (algo, ax) in zip(self.algo_list, axes.flatten()):
             palette = algo.cluster_palette if clustering else algo.annotation_palette
+            annotation = f'tissue_{self.algo_list[0].method_key}' if clustering else self.algo_list[0].annotation
             plot_spatial(algo.adata, annotation=annotation, palette=palette, spot_size=algo.spot_size, ax=ax)
             ax.get_legend().remove()
             ax.set_title(f'{algo.filename}', fontsize=6, loc='center', wrap=True)
@@ -385,27 +383,26 @@ class CommunityDetection(AlgorithmBase):
         
         legend_ncols = 1 if len(handles) <= 12 else 2
         figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
-        figure.savefig(f'{out_path}/{img_name}', dpi=self.params['dpi'], bbox_inches='tight')
+        figure.savefig(f'{self.params["out_path"]}/{img_name}', dpi=self.params['dpi'], bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
     @timeit
-    def plot_all_annotation(self, out_path, algo_list):
-        self.plot_all_slices(out_path, algo_list, algo_list[0].annotation, 'cell_type_per_slice.png')
+    def plot_all_annotation(self):
+        self.plot_all_slices('cell_type_per_slice.png')
 
     @timeit
-    def plot_all_clustering(self, out_path, algo_list):
-        self.plot_all_slices(out_path, algo_list, f'tissue_{algo_list[0].method_key}', 'clustering_per_slice.png', True)
+    def plot_all_clustering(self):
+        self.plot_all_slices('clustering_per_slice.png', True)
 
     @timeit 
-    def plot_celltype_mixtures_total(self, cell_mixtures, path):
+    def plot_celltype_mixtures_total(self, cell_mixtures):
         """
         Plot the total cell type mixtures.
 
         Parameters:
         - cell_mixtures (list): A list of dictionaries containing cell type mixtures.
-        - path (str): The path where the plot will be saved.
 
         """
         def merge_dicts(dict1, dict2):
@@ -446,22 +443,18 @@ class CommunityDetection(AlgorithmBase):
             ax.xaxis.tick_top() 
         
         plt.tight_layout()
-        plt.savefig(os.path.join(path, f'total_cell_mixtures_table.png'), bbox_inches='tight')
+        plt.savefig(os.path.join(self.params['out_path'], f'total_cell_mixtures_table.png'), bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
 
     @timeit
-    def plot_cell_perc_in_community_per_slice(self, algos, path):
+    def plot_cell_perc_in_community_per_slice(self):
         """
         Plots the percentage of cells in each community per slice.
-
-        Parameters:
-        - algos (list): A list of algorithms.
-        - path (str): The path to save the plot.
         """
-        cells_in_comm_per_slice = {algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in algos}
+        cells_in_comm_per_slice = {algo.filename: algo.get_community_labels().value_counts(normalize=True).rename(algo.filename) for algo in self.algo_list}
         df = pd.concat(cells_in_comm_per_slice.values(), axis=1).fillna(0).mul(100).T
         df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
@@ -472,30 +465,26 @@ class CommunityDetection(AlgorithmBase):
         ax.xaxis.tick_top()
         ax.xaxis.set_label_position('top')
         plt.tight_layout()
-        plt.savefig(os.path.join(path, 'cell_perc_in_community_per_slice.png'), bbox_inches='tight')
+        plt.savefig(os.path.join(self.params['out_path'], 'cell_perc_in_community_per_slice.png'), bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
 
     @timeit
-    def plot_cell_abundance_total(self, algos, path):
+    def plot_cell_abundance_total(self):
         """
         Plots the total cell abundance for each algorithm.
-
-        Parameters:
-        - algos (list): A list of algorithms.
-        - path (str): The path to save the plot.
         """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
         greys=cycle(['darkgray','gray','dimgray','lightgray'])
-        colors = [next(greys) for _ in range(len(algos))]
+        colors = [next(greys) for _ in range(len(self.algo_list))]
         cell_percentage_dfs = []
         plot_columns = []
-        for algo in algos:
+        for algo in self.algo_list:
             cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[algo.annotation].value_counts(normalize=True).mul(100).rename(algo.filename)))
             plot_columns.append(algo.filename)
 
@@ -507,22 +496,18 @@ class CommunityDetection(AlgorithmBase):
         ax.set_facecolor('white')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
-        plt.savefig(os.path.join(path, f'cell_abundance_all_slices.png'))
+        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_all_slices.png'))
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
 
     @timeit
-    def plot_cell_abundance_per_slice(self, algos, path):
+    def plot_cell_abundance_per_slice(self):
         """
         Plots the cell abundance for each algorithm per slice.
-
-        Parameters:
-        - algos (list): A list of algorithms.
-        - path (str): The path to save the plot.
         """
-        number_of_samples = len(algos)
+        number_of_samples = len(self.algo_list)
         if number_of_samples <=2:
             number_of_rows = 1
             number_of_columns = number_of_samples
@@ -536,7 +521,7 @@ class CommunityDetection(AlgorithmBase):
 
         cell_percentage_dfs = []
         plot_columns = []
-        for algo in algos:
+        for algo in self.algo_list:
             cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[algo.annotation].value_counts(normalize=True).mul(100).rename(algo.filename)))
             plot_columns.append(algo.filename)
 
@@ -552,30 +537,25 @@ class CommunityDetection(AlgorithmBase):
         for ax in axes:
             ax.grid(False)
         plt.tight_layout()
-        plt.savefig(os.path.join(path, f'cell_abundance_per_slice.png'))
+        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_per_slice.png'))
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
     @timeit 
-    def plot_cluster_abundance_total(self, algos, path):
+    def plot_cluster_abundance_total(self):
         """
         Plots the total cluster abundance for each algorithm.
-
-        Parameters:
-        - algos (list): A list of algorithms.
-        - path (str): The path to save the plot.
-        
         """
         fig, ax = plt.subplots(figsize=(20,10))
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
         greys=cycle(['darkgray','gray','dimgray','lightgray'])
-        colors = [next(greys) for _ in range(len(algos))]
+        colors = [next(greys) for _ in range(len(self.algo_list))]
         cell_percentage_dfs = []
         plot_columns = []
-        for algo in algos:
+        for algo in self.algo_list:
             cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[f'tissue_{algo.method_key}'].value_counts(normalize=True).mul(100).rename(algo.filename)))
             plot_columns.append(algo.filename)
 
@@ -588,22 +568,17 @@ class CommunityDetection(AlgorithmBase):
         ax.set_facecolor('white')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
         plt.tight_layout()
-        plt.savefig(os.path.join(path, f'cluster_abundance_all_slices.png'))
+        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_all_slices.png'))
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
 
     @timeit
-    def plot_cluster_abundance_per_slice(self, algos, path):
+    def plot_cluster_abundance_per_slice(self):
         """
         Plots the cluster abundance for each algorithm per slice.
-
-        Parameters:
-        - algos (list): A list of algorithms.
-        - path (str): The path to save the plot.
-        
         """
-        number_of_samples = len(algos)
+        number_of_samples = len(self.algo_list)
         if number_of_samples <= 2:
             number_of_rows = 1
             number_of_columns = number_of_samples
@@ -617,7 +592,7 @@ class CommunityDetection(AlgorithmBase):
 
         cell_percentage_dfs = []
         plot_columns = []
-        for algo in algos:
+        for algo in self.algo_list:
             cell_percentage_dfs.append(pd.DataFrame(algo.get_adata().obs[f'tissue_{algo.method_key}'].value_counts(normalize=True).mul(100).rename(algo.filename)))
             plot_columns.append(algo.filename)
 
@@ -634,7 +609,7 @@ class CommunityDetection(AlgorithmBase):
         for ax in axes:
             ax.grid(False)
         plt.tight_layout()
-        plt.savefig(os.path.join(path, f'cluster_abundance_per_slice.png'))
+        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_per_slice.png'))
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
