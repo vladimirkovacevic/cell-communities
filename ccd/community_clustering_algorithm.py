@@ -275,6 +275,10 @@ class CommunityClusteringAlgo(ABC):
         stats = pd.DataFrame(stats_table).T
         stats.columns.name = "cell types"
 
+        stats.index = stats.index.astype(int)
+        stats = stats.sort_index()
+        stats.index = stats.index.astype(str)
+
         # [TODO] Condsider doing this in some other place
         # if there are cell types with 0 cells in every cluster remove them
         for col in stats.columns:
@@ -317,7 +321,7 @@ class CommunityClusteringAlgo(ABC):
         sns.set(font_scale=1.5)
 
         ncols = len(stats.columns) # we want to separately print the total_counts column
-        fig, axes = plt.subplots(ncols=ncols, figsize=(15,15))
+        fig, axes = plt.subplots(ncols=ncols, figsize=(16,16))
 
         # no space between columns
         fig.subplots_adjust(wspace=0)
@@ -360,6 +364,11 @@ class CommunityClusteringAlgo(ABC):
         new_stats = new_stats.drop(labels=['total_counts', 'perc_of_all_cells'], axis=1)
         new_stats = new_stats.drop(labels='total_cells', axis=0)
 
+        cl_palette = {}
+        for cluster in new_stats.index:
+            cl_palette[cluster] = '#dcdcdc'
+        cl_palette['unknown'] = '#dcdcdc'
+
         ind=0
         for cluster in new_stats.iterrows():
             if cluster_index != None and cluster_index != ind:
@@ -372,22 +381,30 @@ class CommunityClusteringAlgo(ABC):
                 # sort cell types by their abundnce in the cluster
                 ct_perc = cluster[1].sort_values(ascending=False)
                 # only cell types which have more than min_perc_to_show abundance will be shown
-                ct_ind = [x for x in ct_perc.index[ct_perc > self.min_perc_to_show]]
+                ct_show = ct_perc.index[ct_perc > self.min_perc_to_show]
+                ct_palette = {x: self.annotation_palette[x] for x in ct_show}
+                for y in self.annotation_palette.keys():
+                    if y not in ct_show:
+                        ct_palette[y] = '#dcdcdc'
                 
-                fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
+                fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(15,8))
                 fig.subplots_adjust(wspace=0.35)
 
-                plot_spatial(self.adata, groups=ct_ind, annotation=self.annotation, palette=self.annotation_palette, spot_size=self.spot_size, ax=ax[0])
+                plot_spatial(self.adata, annotation=self.annotation, palette=ct_palette, spot_size=self.spot_size, ax=ax[0])
                 ax[0].set_title(f'Cell types')
-                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts if ind.get_text() in ct_perc.index], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
+                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts if ind.get_text() in ct_show], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=8)
                 
-                plot_spatial(self.adata, groups=[cluster[0]], annotation=f'tissue_{self.method_key}', palette=[cluster_palette[int(cluster[0])]], spot_size=self.spot_size, ax=ax[1])
+                cl_palette[cluster[0]] = cluster_palette[int(cluster[0])]
+
+                plot_spatial(self.adata, groups=[cluster[0]], annotation=f'tissue_{self.method_key}', palette=cl_palette, spot_size=self.spot_size, ax=ax[1])
                 ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
-                ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=12)
+                ax[1].get_legend().remove()
+                #ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=10)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
                 if not self.hide_plots:
                     plt.show()
                 plt.close()
+                cl_palette[cluster[0]] = '#dcdcdc'
 
     @timeit
     def boxplot_stats(self, cluster_index = None, stripplot=False):
@@ -395,6 +412,7 @@ class CommunityClusteringAlgo(ABC):
         Generate a box plot of cell type percentages distribution per cluster.
 
         Args:
+            cluster_index (int, optional):
             stripplot (bool, optional): Whether to overlay a stripplot of specific percentage values.
         
         """
@@ -403,7 +421,8 @@ class CommunityClusteringAlgo(ABC):
         set_figure_params(dpi=self.dpi, facecolor='white')
 
         cluster_list = np.unique(self.tissue.obs[self.cluster_algo])
-        
+        cluster_list = np.sort(cluster_list.astype(np.int32)).astype(str)
+
         ind=0
         for cluster in cluster_list:
             if cluster_index != None and cluster_index != ind:
@@ -579,7 +598,7 @@ class CommunityClusteringAlgo(ABC):
         """Plot a table showing cell type abundance per cluster."""
 
         set_figure_params(dpi=self.dpi, facecolor='white')
-        sns.set(font_scale=1.5)
+        sns.set(font_scale=0.5)
 
         stats = self.tissue.uns['cell mixtures'].copy()
 

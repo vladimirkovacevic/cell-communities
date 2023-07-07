@@ -459,7 +459,7 @@ class CommunityDetection(AlgorithmBase):
         df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
         sns.set(font_scale=1.5)
-        plt.figure(figsize=(15, 15))
+        plt.figure(figsize=(15,15))
 
         ax = sns.heatmap(df, annot=True, fmt="4.0f", cmap="Greys", xticklabels=True, yticklabels=True, square=True, cbar=False)
         ax.xaxis.tick_top()
@@ -476,7 +476,7 @@ class CommunityDetection(AlgorithmBase):
         """
         Plots the total cell abundance for each algorithm.
         """
-        fig, ax = plt.subplots(figsize=(20,10))
+        fig, ax = plt.subplots(figsize=(10,5))
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
@@ -514,7 +514,7 @@ class CommunityDetection(AlgorithmBase):
         else:
             number_of_rows = 2 if number_of_samples % 2 == 0 else 1
             number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20,10), squeeze=False)
+        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(10,5), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
@@ -547,7 +547,7 @@ class CommunityDetection(AlgorithmBase):
         """
         Plots the total cluster abundance for each algorithm.
         """
-        fig, ax = plt.subplots(figsize=(20,10))
+        fig, ax = plt.subplots(figsize=(10,5))
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
@@ -585,7 +585,7 @@ class CommunityDetection(AlgorithmBase):
         else:
             number_of_rows = 2 if number_of_samples % 2 == 0 else 1
             number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(20, 10), squeeze=False)
+        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(10,5), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
