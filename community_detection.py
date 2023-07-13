@@ -378,7 +378,7 @@ class CommunityDetection(AlgorithmBase):
         handles = handles[handles[:, 1].argsort()]
         handles[:, 1] = handles[:, 1].astype('str')
 
-        if len(unknown_label)>0:
+        if len(unknown_label) > 0:
             handles = np.concatenate((handles, unknown_label), axis=0) 
         
         legend_ncols = 1 if len(handles) <= 12 else 2
@@ -476,7 +476,7 @@ class CommunityDetection(AlgorithmBase):
         """
         Plots the total cell abundance for each algorithm.
         """
-        fig, ax = plt.subplots(figsize=(10,5))
+        fig, ax = plt.subplots(figsize=(15,10))
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
 

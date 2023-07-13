@@ -155,11 +155,11 @@ def per_slice_content(path, plotting_level):
     content = ""
     for root, dirs, files in os.walk(path): 
         for name in dirs:
-            content += get_table_plots(os.path.join(root, name))
+            content += get_table_plots(os.path.join(root, name), plotting_level)
     return content
 
 
-def get_table_plots(path):
+def get_table_plots(path, plotting_level):
     """
     Get table plots for a given path.
 
@@ -200,12 +200,12 @@ def get_table_plots(path):
             <tr>
                 <td class="pad20" style="width:40%"><img src={get_base64_encoded_img(celltype_table) if celltype_table != "" else ""}></td>
                 <td class="pad20"><img src={get_base64_encoded_img(cell_mixtures) if cell_mixtures != "" else ""}></td>
-                <td class="pad20" style="width:20%"><img src={get_base64_encoded_img(hist_cell_number) if hist_cell_number != "" else ""}></td>
+                <td class="pad20" style="width:20%"><img title="Histogram of the number of cells in windows" src={get_base64_encoded_img(hist_cell_number) if hist_cell_number != "" else ""}></td>
             </tr>
             </tbody>
         </table>
         <div class="centeredCtPlot">
-            {make_table(ct_colorplots, columns=2, comment="Cell type colorplots")}
+            {make_table(ct_colorplots, columns=2, comment="Cell type colorplots") if plotting_level > 4 else ""}
         </div>
         <hr>
     '''

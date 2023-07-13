@@ -172,6 +172,7 @@ class CommunityClusteringAlgo(ABC):
 
         figure, ax = plt.subplots(nrows=1, ncols=1)
         plt.hist(self.tissue.obs['window_cell_sum'].values)
+        plt.title("Histogram of the number of cells in windows")
         figure.savefig(os.path.join(self.dir_path, f'window_cell_num_hist_ws_{"_".join([str(i) for i in self.win_sizes_list])}.png'), dpi=self.dpi, bbox_inches='tight')
         if not self.hide_plots:
             plt.show()
@@ -356,7 +357,6 @@ class CommunityClusteringAlgo(ABC):
         The resulting plots are saved as PNG files in the directory specified by `self.dir_path`.
 
         """
-        # plot each cluster and its cells mixture
         set_figure_params(dpi=self.dpi, facecolor='white')
         stats = self.tissue.uns['cell mixtures stats']
 
@@ -369,7 +369,7 @@ class CommunityClusteringAlgo(ABC):
             cl_palette[cluster] = '#dcdcdc'
         cl_palette['unknown'] = '#dcdcdc'
 
-        ind=0
+        ind = 0
         for cluster in new_stats.iterrows():
             if cluster_index != None and cluster_index != ind:
                 ind += 1
@@ -392,14 +392,15 @@ class CommunityClusteringAlgo(ABC):
 
                 plot_spatial(self.adata, annotation=self.annotation, palette=ct_palette, spot_size=self.spot_size, ax=ax[0])
                 ax[0].set_title(f'Cell types')
-                ax[0].legend([f'{ind.get_text()} ({ct_perc[ind.get_text()]}%)' for ind in ax[0].get_legend().texts if ind.get_text() in ct_show], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=8)
-                
+                handles, labels = ax[0].get_legend_handles_labels()
+                handles, labels = zip(*filter(lambda hl: hl[1] in ct_show, zip(handles, labels)))
+                ax[0].legend(handles=handles, labels=labels, bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=8)
                 cl_palette[cluster[0]] = cluster_palette[int(cluster[0])]
 
-                plot_spatial(self.adata, groups=[cluster[0]], annotation=f'tissue_{self.method_key}', palette=cl_palette, spot_size=self.spot_size, ax=ax[1])
+                plot_spatial(self.adata, annotation=f'tissue_{self.method_key}', palette=cl_palette, spot_size=self.spot_size, ax=ax[1])
                 ax[1].set_title(f'Cell community {cluster[0]} ({self.adata.uns["sample_name"]})')
                 ax[1].get_legend().remove()
-                #ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=10)
+                # ax[1].legend([f'{ind.get_text()} ({stats.loc[ind.get_text(), "perc_of_all_cells"]}%)' for ind in ax[1].get_legend().texts[:-1]], bbox_to_anchor=(1.0, 0.5), loc='center left', frameon=False, fontsize=10)
                 fig.savefig(os.path.join(self.dir_path, f'cmixtures_{self.params_suffix}_c{cluster[0]}.png'), bbox_inches='tight')
                 if not self.hide_plots:
                     plt.show()
@@ -598,7 +599,7 @@ class CommunityClusteringAlgo(ABC):
         """Plot a table showing cell type abundance per cluster."""
 
         set_figure_params(dpi=self.dpi, facecolor='white')
-        sns.set(font_scale=0.5)
+        sns.set(font_scale=1)
 
         stats = self.tissue.uns['cell mixtures'].copy()
 
@@ -646,6 +647,7 @@ class CommunityClusteringAlgo(ABC):
                 column_cmap[0] = cluster_color[stats.index[i-1]]
                 g = sns.heatmap(np.array(range(stats.shape[1]+1))[:, np.newaxis], linewidths=0.5, linecolor='gray', annot=table_annotation, cbar=False, cmap=column_cmap, ax=ax, fmt='', xticklabels=False, yticklabels=False, square=None)
         axes[i//2].set_title('Cell type abundance per cluster (and per cel type set)')
+        axes[i//2].title.set_size(20)
         fig.savefig(os.path.join(self.dir_path, f'celltype_table_{self.params_suffix}.png'), bbox_inches='tight')
         if not self.hide_plots:
             plt.show()

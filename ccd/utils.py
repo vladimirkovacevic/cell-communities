@@ -56,6 +56,7 @@ def plot_spatial(
     ax.tick_params(bottom=False, left=False)
     ax.set_aspect("equal")
     sns.despine(bottom=True, left=True, ax=ax)
+    return ax
 
 def set_figure_params(
         dpi: int,
