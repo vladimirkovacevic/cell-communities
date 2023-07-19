@@ -353,7 +353,7 @@ class CommunityDetection(AlgorithmBase):
         number_of_rows = 2 if number_of_samples % 2 == 0 and number_of_samples > 2 else 1
         number_of_columns = (number_of_samples // 2) if number_of_samples % 2 == 0 and number_of_samples > 2 else number_of_samples
 
-        figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained')
+        figure, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, squeeze=False, layout='constrained', figsize=(10,6))
         h_d = {}
         unknown_label = []
         for (algo, ax) in zip(self.algo_list, axes.flatten()):
@@ -382,7 +382,7 @@ class CommunityDetection(AlgorithmBase):
             handles = np.concatenate((handles, unknown_label), axis=0) 
         
         legend_ncols = 1 if len(handles) <= 12 else 2
-        figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=4, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=10)
+        figure.legend(handles[:, 0], handles[:, 1], bbox_to_anchor=(1.15, 0.5), loc='center', fontsize=8, frameon=False, borderaxespad=0., ncol=legend_ncols, labelspacing=1, scatterpoints=1)
         figure.savefig(f'{self.params["out_path"]}/{img_name}', dpi=self.params['dpi'], bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
@@ -426,7 +426,7 @@ class CommunityDetection(AlgorithmBase):
         sns.set(font_scale=1.5)
 
         ncols = len(total.columns)
-        fig, axes = plt.subplots(ncols=ncols, figsize=(20,15))
+        fig, axes = plt.subplots(ncols=ncols, figsize=(30,20))
         fig.subplots_adjust(wspace=0)
 
         vmax_perc = np.max(np.ravel(total.iloc[:-1,:-2]))
@@ -440,9 +440,9 @@ class CommunityDetection(AlgorithmBase):
         
         for ax in axes:
             ax.set_xticklabels(ax.get_xticklabels(), rotation=70)
-            ax.xaxis.tick_top() 
+            ax.xaxis.tick_top()
         
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.savefig(os.path.join(self.params['out_path'], f'total_cell_mixtures_table.png'), bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
@@ -450,7 +450,7 @@ class CommunityDetection(AlgorithmBase):
 
 
     @timeit
-    def plot_cell_perc_in_community_per_slice(self):
+    def plot_cell_perc_in_community_per_slice(self, figsize=None):
         """
         Plots the percentage of cells in each community per slice.
         """
@@ -459,7 +459,7 @@ class CommunityDetection(AlgorithmBase):
         df = df[sorted(df.columns.values, key=lambda x: float(x) if x != "unknown" else float('inf'))]
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
         sns.set(font_scale=1.5)
-        plt.figure(figsize=(15,15))
+        plt.figure(figsize=(30,20))
 
         ax = sns.heatmap(df, annot=True, fmt="4.0f", cmap="Greys", xticklabels=True, yticklabels=True, square=True, cbar=False)
         ax.xaxis.tick_top()
@@ -476,7 +476,7 @@ class CommunityDetection(AlgorithmBase):
         """
         Plots the total cell abundance for each algorithm.
         """
-        fig, ax = plt.subplots(figsize=(15,10))
+        fig, ax = plt.subplots(figsize=(30,20))
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
@@ -495,8 +495,8 @@ class CommunityDetection(AlgorithmBase):
         ax.grid(False)
         ax.set_facecolor('white')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_all_slices.png'))
+        # plt.tight_layout()
+        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_all_slices.png'), bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
@@ -508,13 +508,13 @@ class CommunityDetection(AlgorithmBase):
         Plots the cell abundance for each algorithm per slice.
         """
         number_of_samples = len(self.algo_list)
-        if number_of_samples <=2:
+        if number_of_samples <= 2:
             number_of_rows = 1
             number_of_columns = number_of_samples
         else:
             number_of_rows = 2 if number_of_samples % 2 == 0 else 1
             number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(10,5), squeeze=False)
+        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(30,30), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
@@ -536,8 +536,8 @@ class CommunityDetection(AlgorithmBase):
 
         for ax in axes:
             ax.grid(False)
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_per_slice.png'))
+
+        plt.savefig(os.path.join(self.params['out_path'], f'cell_abundance_per_slice.png'), bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
@@ -547,7 +547,7 @@ class CommunityDetection(AlgorithmBase):
         """
         Plots the total cluster abundance for each algorithm.
         """
-        fig, ax = plt.subplots(figsize=(10,5))
+        fig, ax = plt.subplots(figsize=(30,20))
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
 
@@ -567,8 +567,7 @@ class CommunityDetection(AlgorithmBase):
         ax.grid(False)
         ax.set_facecolor('white')
         plt.legend(loc='upper left', bbox_to_anchor=(1.04, 1))
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_all_slices.png'))
+        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_all_slices.png'), bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
@@ -585,7 +584,7 @@ class CommunityDetection(AlgorithmBase):
         else:
             number_of_rows = 2 if number_of_samples % 2 == 0 else 1
             number_of_columns = number_of_samples // 2 if number_of_samples % 2 == 0 else number_of_samples
-        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(10,5), squeeze=False)
+        fig, axes = plt.subplots(nrows=number_of_rows, ncols=number_of_columns, figsize=(30,30), squeeze=False)
         axes = axes.ravel()
         fig.subplots_adjust(wspace=0)
         set_figure_params(dpi=self.params['dpi'], facecolor='white')
@@ -608,8 +607,8 @@ class CommunityDetection(AlgorithmBase):
 
         for ax in axes:
             ax.grid(False)
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_per_slice.png'))
+
+        plt.savefig(os.path.join(self.params['out_path'], f'cluster_abundance_per_slice.png'), bbox_inches='tight')
         if not self.params['hide_plots']:
             plt.show()
         plt.close()
@@ -629,7 +628,7 @@ class CommunityDetection(AlgorithmBase):
         if function_ind == "colorplot": self.algo_list[slice_id].colorplot_stats(self.params['color_plot_system'], community_id)
         if function_ind == "colorplot_cell_type": self.algo_list[slice_id].colorplot_stats_per_cell_types()
         if function_ind == "cell_types_table": self.algo_list[slice_id].plot_celltype_table()
-        if function_ind == "boxplot": self.algo_list[slice_id].boxplot_stats(community_id)
+        if function_ind == "boxplot": self.algo_list[slice_id].boxplot_stats(community_id, )
         if function_ind == "cell_types_images": self.algo_list[slice_id].plot_celltype_images()
         if function_ind == "histogram_cell_sums": self.algo_list[slice_id].plot_histogram_cell_sum_window()
         if function_ind == "cluster_mixtures": self.algo_list[slice_id].plot_cluster_mixtures(community_id)
