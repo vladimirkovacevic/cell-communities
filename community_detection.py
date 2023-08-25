@@ -15,6 +15,7 @@ from sklearn.cluster import SpectralClustering, AgglomerativeClustering
 
 from anndata import AnnData
 from ccd import *
+from ccd.community_clustering_algorithm import cluster_palette
 
 class CommunityDetection():
     """
