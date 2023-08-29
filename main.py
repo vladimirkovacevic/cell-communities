@@ -5,6 +5,7 @@ import argparse as ap
 import scanpy as sc
 
 from community_detection import CommunityDetection
+from ccd.utils import csv_to_anndata
 
 if __name__ == '__main__':
     start_time = time.perf_counter()
@@ -16,13 +17,13 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--out_path', help='Absolute path to store outputs', type=str, default='results')
     parser.add_argument('-c', '--cluster_algo', help='Clustering algorithm', type=str, required=False, default='leiden', choices={'leiden', 'spectral', 'agglomerative'})
     parser.add_argument('-r', '--resolution', help='Resolution of leiden clustering algorithm. Ignored for spectral and agglomerative.', type=float, required=False, default=0.2)
-    parser.add_argument('-s', '--spot_size', help='Size of the spot on plot', type=float, required=False, default=30)
+    parser.add_argument('-s', '--spot_size', help='Size of the spot on plot', type=float, required=False, default=12)
     parser.add_argument('-v', '--verbose', help='Show logging messages. 0 - Show warrnings, >0 show info, <0 no output generated.', type=int, default=0)
     parser.add_argument('-p', '--plotting', help='Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - save all plots (cell type images, statisctics and cell mixture plots)', type=int, required=False, default=2)
     parser.add_argument('--project_name', help='Project name that is used to name a directory containing all the slices used', type=str, required=False, default="community")
     parser.add_argument('--skip_stats', help='Skip statistics calculation on cell community clustering result. A table of cell mixtures and comparative spatial plots of cell types and mixtures will not be created.', type=bool, required=False, default=False)
     parser.add_argument('--total_cell_norm', help='Total number of cells per window mixture after normalization', type=int, required=False, default=10000)
-    parser.add_argument('--downsample_rate', help='Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics', type=int, required=False, default=50)
+    parser.add_argument('--downsample_rate', help='Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics', type=int, required=False, default=80)
     parser.add_argument('--dpi', help='DPI (dots per inch) used for plotting figures', type=int, required=False, default=100)
     parser.add_argument('--num_threads', help='Number of threads that will be used to speed up community calling', type=int, required=False, default=5)
     parser.add_argument('--entropy_thres', help='Threshold value for spatial cell type entropy for filtering out overdispersed cell types', type=float, required=False, default=1.0)
@@ -54,6 +55,9 @@ if __name__ == '__main__':
         # READ CELL TYPE ADATA
         if file.endswith('.h5ad'):
             adata = sc.read(file)
+            slices.append(adata)
+        elif file.endswith('.csv'):
+            adata = csv_to_anndata(file, annotation=args.annotation)
             slices.append(adata)
         else:
             # TODO: Consider adding GEF support

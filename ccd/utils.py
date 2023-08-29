@@ -1,9 +1,19 @@
-import time
-import scanpy as sc
+'''
+utils.py is created for wrappers, timeit decorator and
+everything else that should be globally accessible and does not belong
+to any specific class.
 
-from matplotlib.axes import Axes
-from typing import List
+'''
+import time
 from functools import wraps
+
+import anndata as ad
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib import rcParams
+from matplotlib.axes import Axes
+
 
 def timeit(func):
     @wraps(func)
@@ -14,33 +24,68 @@ def timeit(func):
         total_time = end_time - start_time
         print(f'Function {func.__name__} took {total_time:.4f}s')
         return result
+
     return timeit_wrapper
+
 
 @timeit
 def plot_spatial(
-    adata,
-    color: List[str],
-    ax: Axes,
-    spot_size: float,
-    img_key: str = None,
-    title: str = None,
-    groups = None,
-    palette: List[str] = None,
-    show: bool = False,
-    frameon: bool = False
+        adata,
+        annotation,
+        ax: Axes,
+        spot_size: float,
+        palette=None,
+        title: str = ""
 ):
     """
-    Scatter plot in spatial coordinates. A wrapper around scanpy's pl.spatial to correct inversion of y-axis. 
-    Standard plots have coordinates in 'lower left' while images are considered
-    to start from 'upper left'.scanpy assumes that we will always
-    plot some sort of staining image. if we do not provide image, scanpy
-    will flip yaxis for us to get back to the standard plot coordinates.
-    that causes inversion of our plotting figures so we wrapped scanpy's
-    pl.spatial. utils.py is created for such wrappers, timeit decorator and
-    everything else that should be globally accessible and does not belong
-    to any specific class.
+    Scatter plot in spatial coordinates.
+
+    Parameters:
+        - adata (AnnData): Annotated data object which represents the sample
+        - annotation (str): adata.obs column used for grouping
+        - ax (Axes): Axes object used for plotting
+        - spot_size (int): Size of the dot that represents a cell. We are passing it as a diameter of the spot, while
+                the plotting library uses radius therefore it is multiplied by 0.5
+        - palette (dict): Dictionary that represents a mapping between annotation categories and colors
+        - title (str): Title of the figure
 
     """
-    if img_key is None:
-        ax.invert_yaxis()
-    sc.pl.spatial(adata, color=color, spot_size=spot_size, ax=ax, show=show, frameon=frameon, title=title, palette=palette, groups=groups)
+    s = spot_size * 0.5
+    data = adata
+    ax = sns.scatterplot(
+        data=data.obs, hue=annotation, x=data.obsm['spatial'][:, 0], y=data.obsm['spatial'][:, 1],
+        ax=ax, s=s, linewidth=0, palette=palette, marker='.'
+    )
+    ax.set(yticklabels=[], xticklabels=[], title=title)
+    ax.tick_params(bottom=False, left=False)
+    ax.set_aspect("equal")
+    sns.despine(bottom=True, left=True, ax=ax)
+
+
+def set_figure_params(
+        dpi: int,
+        facecolor: str,
+):
+    rcParams['figure.facecolor'] = facecolor
+    rcParams['axes.facecolor'] = facecolor
+    rcParams["figure.dpi"] = dpi
+
+
+def csv_to_anndata(csv_file_path: str, annotation: str):
+    """
+    Convert csv data with cell ID, spatial coordinates (x and y), and cell type annotation
+    to an Anndata object with empty X layer, for CCD analysis.
+    cell ID data should be converted to string type.
+
+    Parameters:
+        - csv_file_path (str): path to .csv file with sample data
+        - annotation (str): name of the column with cell type labels
+
+    """
+    df = pd.read_csv(csv_file_path)
+    adata = ad.AnnData(np.zeros(shape=(df.shape[0], 1), dtype=np.float32), dtype=np.float32)
+    adata.obs_names = df.loc[:, 'cell_ID'].values.astype('str').copy()
+    adata.obs[annotation] = df.loc[:, annotation].values.copy()
+    adata.obsm['spatial'] = df.loc[:, ['x', 'y']].values.copy()
+    del df
+    return adata
