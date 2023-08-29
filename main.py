@@ -5,6 +5,7 @@ import argparse as ap
 import scanpy as sc
 
 from community_detection import CommunityDetection
+from ccd.utils import csv_to_anndata
 
 if __name__ == '__main__':
     start_time = time.perf_counter()
@@ -54,6 +55,9 @@ if __name__ == '__main__':
         # READ CELL TYPE ADATA
         if file.endswith('.h5ad'):
             adata = sc.read(file)
+            slices.append(adata)
+        elif file.endswith('.csv'):
+            adata = csv_to_anndata(file, annotation=args.annotation)
             slices.append(adata)
         else:
             # TODO: Consider adding GEF support
