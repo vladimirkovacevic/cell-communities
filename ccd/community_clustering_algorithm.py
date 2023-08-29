@@ -64,20 +64,23 @@ class CommunityClusteringAlgo(ABC):
         self.adata.uns['sample_name'] = os.path.basename(input_file_path.rsplit(".", 1)[0])
 
         self.tissue = None
-
+        self.annotation_palette = {ct : self.adata.uns[f'{self.annotation}_colors'][i] for i, ct in enumerate( list(sorted(self.adata.obs[self.annotation].unique())))}
+        
+        # remove cell types that have less than self.min_count_per_type percentage of tissue
         cell_count_limit = (self.min_count_per_type*len(self.adata)) // 100
         cell_over_limit = []
-        for cell_tp in sorted(self.adata.obs[self.annotation].unique()):
+        for loc, cell_tp in enumerate(sorted(self.adata.obs[self.annotation].unique())):
             cell_num = sum(self.adata.obs[self.annotation]==cell_tp)
             if cell_num > cell_count_limit:
                 cell_over_limit.append(cell_tp)
             else:
+                # remove cell type color from annotation_palette
+                del self.annotation_palette[cell_tp]
                 logging.info(f'{cell_tp} cell type excluded, due to insufficient cells of that type: {cell_num} cells < {int(cell_count_limit)} ({self.min_count_per_type} % of {len(self.adata)})')
         
         self.adata = self.adata[self.adata.obs[self.annotation].isin(cell_over_limit),:]
         self.unique_cell_type = list(sorted(self.adata.obs[self.annotation].unique()))
 
-        self.annotation_palette = {ct : self.adata.uns[f'{self.annotation}_colors'][i] for i, ct in enumerate(self.unique_cell_type)}
         self.cluster_palette = {str(i) : color for i, color in enumerate(cluster_palette)}
         self.cluster_palette['unknown']='#CCCCCC'
 
