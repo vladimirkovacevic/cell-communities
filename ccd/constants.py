@@ -10,7 +10,7 @@ COMMUNITY_DETECTION_DEFAULTS = {
     # Number of clusters for spectral and agglomerative clustering. Ignored for leiden.
     'n_clusters': 10,
     # Size of the spot on plot.
-    'spot_size': 30,
+    'spot_size': 12,
     # Show logging messages. 0 - Show warnings, >0 show info.
     'verbose': 0,
     # Save plots flag. 0 - No plotting/saving, 1 - save clustering plot, 2 - additionally save plots of cell type images statistics and cell mixture plots, 
