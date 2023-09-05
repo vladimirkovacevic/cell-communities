@@ -49,7 +49,7 @@ python main.py [-h] -f FILE [-t TFILE] -a ANNOTATION [-o OUT_PATH] [-c CLUSTER_A
 - `-w, --win_sizes`: Comma-separated list of window sizes for analyzing the cell community. Default is `NA`. If window sizes are not provided, the algorithm uses iterative approach to obtain an optimal size of window base on average cell number.
 - `--sliding_steps`: Comma-separated list of sliding steps for sliding window. Default is `NA`. If sliding step is not provided it will be defined as half of window size.
 - `--total_cell_norm`: Total number of cells per window mixture after normalization. Default is `10000`.
-- `--downsample_rate`: Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics. Default is `80`.
+- `--downsample_rate`: Rate by which the binary image of cells is downsampled before calculating the entropy and scatteredness metrics. If not provided, it is set to 1/2 of the smallest window size. Default is `None`.
 - `--num_threads`: Number of threads that will be used to speed up community calling. Default is `5`.
 - `--entropy_thres`: Threshold value for spatial cell type entropy for filtering out overdispersed cell types. Default is `1.0`.
 - `--scatter_thres`: Threshold value for spatial cell type scatteredness for filtering out overdispersed cell types. Default is `1.0`.
