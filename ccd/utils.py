@@ -5,6 +5,7 @@ to any specific class.
 
 '''
 import time
+import logging
 from functools import wraps
 
 import anndata as ad
@@ -89,3 +90,11 @@ def csv_to_anndata(csv_file_path: str, annotation: str):
     adata.obsm['spatial'] = df.loc[:, ['x', 'y']].values.copy()
     del df
     return adata
+
+def init_logger(level):
+    if level == 0:
+        logging.basicConfig(level=logging.WARNING, force=True, format='%(message)s')
+    elif level > 0:
+        logging.basicConfig(level=logging.INFO, force=True, format='%(message)s')
+    else:
+        logging.basicConfig(level=logging.NOTSET, force=True, format='%(message)s')
