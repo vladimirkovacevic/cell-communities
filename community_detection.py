@@ -47,6 +47,7 @@ class CommunityDetection():
         - **kwargs: Additional keyword arguments.
         """
         self.params = { **COMMUNITY_DETECTION_DEFAULTS, **kwargs }
+        init_logger(level=self.params['verbose'])
         self.params['annotation'] = annotation
         self.slices = slices
         self.cell_types = set([])
