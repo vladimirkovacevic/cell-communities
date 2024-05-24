@@ -147,7 +147,7 @@ class CommunityClusteringAlgo(ABC):
         - labels (pandas.Series): The clustering labels.
 
         """
-        self.tissue.obs.loc[:, self.cluster_algo] = labels
+        self.tissue.obs[self.cluster_algo] = labels
 
 
     @timeit
